@@ -74,6 +74,8 @@ const CHANGE_TYPE_LABELS: Record<string, string> = {
 	purchase: "购买",
 	consumption: "消耗",
 	gift: "赠送",
+	manual: "手动处理",
+	system: "自动处理",
 	refund: "退款",
 }
 

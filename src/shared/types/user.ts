@@ -49,7 +49,13 @@ export interface CreditBalanceResponse {
 	credit_balance: number
 }
 
-export type CreditChangeType = "consumption" | "gift" | "purchase" | "refund"
+export type CreditChangeType =
+	| "consumption"
+	| "gift"
+	| "purchase"
+	| "refund"
+	| "manual"
+	| "system"
 
 export interface CreditLedger {
 	amount: number
