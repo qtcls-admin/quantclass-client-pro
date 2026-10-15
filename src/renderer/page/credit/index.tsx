@@ -23,6 +23,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/renderer/components/ui/select"
+import { Input } from "@/renderer/components/ui/input"
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@/renderer/components/ui/tabs"
 import {
 	Table,
 	TableBody,
@@ -31,6 +38,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/renderer/components/ui/table"
+import { CreditConsumptionTable } from "@/renderer/page/credit/credit-consumption-table"
+import {
+	BASIC_CREDIT_PRODUCTS,
+	SHARE_MEETING_CREDIT_PRODUCTS,
+} from "@/renderer/page/credit/credit-consumption-products"
 import { H3 } from "@/renderer/components/ui/typography"
 import {
 	formatCreditBalance,
@@ -41,34 +53,11 @@ import { cn } from "@/renderer/lib/utils"
 import { userAtom } from "@/renderer/store/user"
 import type { CreditLedger } from "@/shared/types"
 import { useAtomValue } from "jotai"
-import { RefreshCw, Wallet, Zap } from "lucide-react"
+import { RefreshCw, Search, Wallet, Zap } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 const { openPaymentClientPortal } = window.electronAPI
-
-const BASIC_CREDIT_PRODUCTS = [
-	{
-		name: "邢不行财务数据",
-		full: "47.04",
-		incremental: "0.588",
-	},
-	{
-		name: "主要指数历史日线数据",
-		full: "0.08",
-		incremental: "0.001",
-	},
-	{
-		name: "股票历史日线数据",
-		full: "7.04",
-		incremental: "0.088",
-	},
-	{
-		name: "ETF基金日线数据",
-		full: "7.04",
-		incremental: "0.088",
-	},
-] as const
 
 const CHANGE_TYPE_LABELS: Record<string, string> = {
 	purchase: "购买",
@@ -121,6 +110,8 @@ export default function CreditPage() {
 		refetchCreditRecords,
 	} = useCreditRecords(isLoggedIn, page, pageSize)
 	const [isOpeningPaymentPortal, setIsOpeningPaymentPortal] = useState(false)
+	const [consumptionTab, setConsumptionTab] = useState("basic")
+	const [consumptionSearch, setConsumptionSearch] = useState("")
 
 	const ledgers = creditRecords?.ledgers ?? []
 	const total = creditRecords?.total ?? 0
@@ -224,32 +215,46 @@ export default function CreditPage() {
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="pb-4">
-					<div className="overflow-hidden rounded-lg border">
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>数据产品</TableHead>
-									<TableHead className="text-right">全量恢复（约）</TableHead>
-									<TableHead className="text-right">增量更新（约）</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{BASIC_CREDIT_PRODUCTS.map((product) => (
-									<TableRow key={product.name}>
-										<TableCell className="font-medium">
-											{product.name}
-										</TableCell>
-										<TableCell className="text-right font-mono">
-											{product.full}
-										</TableCell>
-										<TableCell className="text-right font-mono">
-											{product.incremental}
-										</TableCell>
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</div>
+					<Tabs
+						value={consumptionTab}
+						onValueChange={(value) => {
+							setConsumptionTab(value)
+							setConsumptionSearch("")
+						}}
+						className="gap-2"
+					>
+						<div className="flex flex-wrap items-center justify-between gap-3">
+							<TabsList>
+								<TabsTrigger value="basic">基础课程</TabsTrigger>
+								<TabsTrigger value="share-meeting">分享会</TabsTrigger>
+							</TabsList>
+							<div className="relative ms-auto">
+								<Input
+									placeholder="请输入搜索内容..."
+									className="h-8 w-[150px] peer pe-9 ps-9 lg:w-[250px]"
+									value={consumptionSearch}
+									onChange={(event) =>
+										setConsumptionSearch(event.target.value)
+									}
+								/>
+								<div className="pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-muted-foreground/80">
+									<Search size={16} strokeWidth={2} />
+								</div>
+							</div>
+						</div>
+						<TabsContent value="basic" className="mt-2">
+							<CreditConsumptionTable
+								products={BASIC_CREDIT_PRODUCTS}
+								searchQuery={consumptionSearch}
+							/>
+						</TabsContent>
+						<TabsContent value="share-meeting" className="mt-2">
+							<CreditConsumptionTable
+								products={SHARE_MEETING_CREDIT_PRODUCTS}
+								searchQuery={consumptionSearch}
+							/>
+						</TabsContent>
+					</Tabs>
 				</CardContent>
 			</Card>
 
