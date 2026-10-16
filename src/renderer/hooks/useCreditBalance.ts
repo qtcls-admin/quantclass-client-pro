@@ -21,7 +21,7 @@ export function formatCreditBalance(
 		? balance.toLocaleString()
 		: balance.toLocaleString(undefined, {
 				minimumFractionDigits: 0,
-				maximumFractionDigits: 2,
+				maximumFractionDigits: 3,
 			})
 }
 
