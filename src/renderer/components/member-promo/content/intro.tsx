@@ -13,8 +13,10 @@ import { INTRO_PROMO_2025_MARKDOWN } from "@/renderer/components/member-promo/co
 import { INTRO_PROMO_2026_MARKDOWN } from "@/renderer/components/member-promo/content/intro-markdown-2026"
 import {
 	FEN_CLASS_LINKS,
+	FEN_CLIENT_PRODUCT_PATH_BY_YEAR,
 	FEN_CLASS_URL_BY_YEAR,
 } from "@/renderer/components/member-promo/constants"
+import { toast } from "sonner"
 import { MemberPromoMarkdown } from "@/renderer/components/member-promo/promo-markdown"
 import { MemberPromoTabPanel } from "@/renderer/components/member-promo/promo-tab-panel"
 
@@ -31,7 +33,7 @@ const INTRO_MARKDOWN_BY_YEAR: Record<FenIntroYear, string> = {
 }
 
 export function IntroPromoContent({ year }: IntroPromoContentProps) {
-	const { openUrl } = window.electronAPI
+	const { openUrl, openPaymentClientPortal } = window.electronAPI
 	const fenItem = FEN_CLASS_LINKS.find((item) => item.year === year)
 	const markdown = INTRO_MARKDOWN_BY_YEAR[year]
 
@@ -39,12 +41,24 @@ export function IntroPromoContent({ year }: IntroPromoContentProps) {
 
 	const introTitle = `${String(year).slice(-2)}版邢不行策略分享会`
 
+	const handleBuy = async () => {
+		if (year === 2024) {
+			openUrl(FEN_CLASS_URL_BY_YEAR[year])
+			return
+		}
+		const clientPath = FEN_CLIENT_PRODUCT_PATH_BY_YEAR[year]
+		const result = await openPaymentClientPortal(clientPath)
+		if (!result.success) {
+			toast.error(result.message ?? "打开支付页面失败")
+		}
+	}
+
 	const buyButton = (
 		<button
 			type="button"
 			className="rounded-md border border-[#3D4C82] px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
 			style={{ backgroundColor: fenItem.bg }}
-			onClick={() => openUrl(FEN_CLASS_URL_BY_YEAR[year])}
+			onClick={() => void handleBuy()}
 		>
 			立即购买 · {fenItem.label}
 		</button>

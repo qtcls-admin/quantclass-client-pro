@@ -212,34 +212,42 @@ function logoutHandler(): void {
 
 // -- 在内嵌 BrowserWindow 中打开支付平台页面
 function openPaymentClientPortalHandler(): void {
-	ipcMain.handle("auth:open-payment-client-portal", async () => {
-		const accessToken = await tokenStore.getAccessToken()
-		if (!accessToken) {
-			return { success: false, message: "请先登录" }
-		}
-
-		const url = `${PAYMENT_GATEWAY_URL.replace(/\/$/, "")}/client`
-		const extraHeaders = `Authorization: Bearer ${accessToken}\r\n`
-
-		try {
-			return await openEmbeddedPortalWindow({
-				windowId: PAYMENT_CLIENT_WINDOW_ID,
-				url,
-				title: "支付中心",
-				loadOptions: { extraHeaders },
-				setupWindow: setupExternalLinkWindowOpenHandler,
-			})
-		} catch (error) {
-			logger.error(
-				`[auth-ipc] 打开支付客户端失败: ${error instanceof Error ? error.message : String(error)}`,
-			)
-			windowManager.closeWindow(PAYMENT_CLIENT_WINDOW_ID)
-			return {
-				success: false,
-				message: "打开支付页面失败，请稍后重试",
+	ipcMain.handle(
+		"auth:open-payment-client-portal",
+		async (_event, clientPath?: string) => {
+			const accessToken = await tokenStore.getAccessToken()
+			if (!accessToken) {
+				return { success: false, message: "请先登录" }
 			}
-		}
-	})
+
+			const path =
+				typeof clientPath === "string" && clientPath.startsWith("/")
+					? clientPath
+					: "/client"
+			const url = `${PAYMENT_GATEWAY_URL.replace(/\/$/, "")}${path}`
+			const extraHeaders = `Authorization: Bearer ${accessToken}\r\n`
+
+			try {
+				return await openEmbeddedPortalWindow({
+					windowId: PAYMENT_CLIENT_WINDOW_ID,
+					url,
+					title: "支付中心",
+					loadOptions: { extraHeaders },
+					setupWindow: (win) =>
+						setupInternalOriginWindowOpenHandler(win, PAYMENT_GATEWAY_URL),
+				})
+			} catch (error) {
+				logger.error(
+					`[auth-ipc] 打开支付客户端失败: ${error instanceof Error ? error.message : String(error)}`,
+				)
+				windowManager.closeWindow(PAYMENT_CLIENT_WINDOW_ID)
+				return {
+					success: false,
+					message: "打开支付页面失败，请稍后重试",
+				}
+			}
+		},
+	)
 }
 
 function openBbsPortalHandler(): void {

@@ -27,10 +27,12 @@ export const authIPC = {
 	logoutAuth: (): Promise<void> => ipcRenderer.invoke("auth:logout"),
 
 	// -- 在内嵌窗口打开支付平台页面
-	openPaymentClientPortal: (): Promise<{
+	openPaymentClientPortal: (
+		clientPath?: string,
+	): Promise<{
 		success: boolean
 		message?: string
-	}> => ipcRenderer.invoke("auth:open-payment-client-portal"),
+	}> => ipcRenderer.invoke("auth:open-payment-client-portal", clientPath),
 
 	// -- 在内嵌窗口打开量化论坛（token 通过 URL 传递）
 	openBbsPortal: (
