@@ -330,11 +330,7 @@ export function Customizer() {
 				</div>
 			</ThemeWrapper>
 
-			<MemberPromoDialog
-				open={promoOpen}
-				onOpenChange={setPromoOpen}
-				featureName="主题色"
-			/>
+			<MemberPromoDialog open={promoOpen} onOpenChange={setPromoOpen} />
 
 			{/* 重启提示弹窗 */}
 			<AlertDialog open={showRestartDialog} onOpenChange={setShowRestartDialog}>

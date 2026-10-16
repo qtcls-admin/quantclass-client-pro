@@ -129,11 +129,7 @@ export default function BuyBlacklistAddInput() {
 					toast.success(`拉黑${buyBlacklistItem.code}成功`)
 				}}
 			/>
-			<MemberPromoDialog
-				open={promoOpen}
-				onOpenChange={setPromoOpen}
-				featureName="买入黑名单"
-			/>
+			<MemberPromoDialog open={promoOpen} onOpenChange={setPromoOpen} />
 		</>
 	)
 }

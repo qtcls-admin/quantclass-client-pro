@@ -51,11 +51,7 @@ const ResearchSectionPage: FC = () => {
 
 				if (activeTab === "strategy_library") {
 					return (
-						<MemberPromoGate
-							featureName="投研中心"
-							className="h-full"
-							showBanner={false}
-						>
+						<MemberPromoGate className="h-full" showBanner={false}>
 							<ResearchStrategyLibraryPage
 								headerAddon={
 									!isMember ? (

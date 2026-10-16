@@ -47,7 +47,6 @@ interface MemberPromoBannerProps {
 
 interface MemberPromoGateProps {
 	children: ReactNode
-	featureName: string
 	className?: string
 	showBanner?: boolean
 	bannerClassName?: string
@@ -101,7 +100,6 @@ export function MemberPromoBanner({
 /** 非分享会用户：内容可见，点击交互统一弹分享会窗 */
 export function MemberPromoGate({
 	children,
-	featureName,
 	className,
 	showBanner = true,
 	bannerClassName,
@@ -145,11 +143,7 @@ export function MemberPromoGate({
 			>
 				{children}
 			</div>
-			<MemberPromoDialog
-				open={promoOpen}
-				onOpenChange={setPromoOpen}
-				featureName={featureName}
-			/>
+			<MemberPromoDialog open={promoOpen} onOpenChange={setPromoOpen} />
 		</MemberPromoGateContext.Provider>
 	)
 }

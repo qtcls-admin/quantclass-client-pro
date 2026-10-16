@@ -39,6 +39,8 @@ export interface MemberPromoImage {
 interface MemberPromoTabPanelProps {
 	title: string
 	images?: Array<string | MemberPromoImage>
+	headerBelowTitle?: ReactNode
+	footer?: ReactNode
 	children: ReactNode
 }
 
@@ -152,31 +154,47 @@ export function MemberPromoFenClassButton({
 export function MemberPromoTabPanel({
 	title,
 	images = [],
+	headerBelowTitle,
+	footer,
 	children,
 }: MemberPromoTabPanelProps) {
 	return (
 		<div
 			className={cn(
-				"h-full min-h-0 overflow-y-auto pr-1",
+				"flex h-full min-h-0 flex-col",
 				memberPromoBodyTextClassName,
 			)}
 		>
-			<h2
-				className={cn(
-					"text-center text-lg font-bold tracking-wide",
-					memberPromoTitleClassName,
-				)}
-			>
-				{title}
-			</h2>
+			<div className="min-h-0 flex-1 overflow-y-auto pr-1">
+				<h2
+					className={cn(
+						"text-center text-lg font-bold tracking-wide",
+						memberPromoTitleClassName,
+					)}
+				>
+					{title}
+				</h2>
 
-			<div className="mt-3">
-				<PromoImageCarousel images={images} />
+				{headerBelowTitle ? (
+					<div className="mt-3">{headerBelowTitle}</div>
+				) : null}
+
+				{images.length > 0 ? (
+					<div className="mt-3">
+						<PromoImageCarousel images={images} />
+					</div>
+				) : null}
+
+				<div className="mt-4 text-sm leading-relaxed text-neutral-800 dark:text-neutral-100">
+					{children}
+				</div>
 			</div>
 
-			<div className="mt-4 text-sm leading-relaxed text-neutral-800 dark:text-neutral-100">
-				{children}
-			</div>
+			{footer ? (
+				<div className="-mx-4 -mb-4 mt-3 flex shrink-0 items-center justify-center border-t border-border/60 bg-background/95 px-4 py-3 backdrop-blur-sm">
+					{footer}
+				</div>
+			) : null}
 		</div>
 	)
 }

@@ -274,11 +274,7 @@ export default function BuyBlacklistAddConfirm({
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
-			<MemberPromoDialog
-				open={promoOpen}
-				onOpenChange={setPromoOpen}
-				featureName="条件不买入（涨跌幅限制）"
-			/>
+			<MemberPromoDialog open={promoOpen} onOpenChange={setPromoOpen} />
 		</>
 	)
 }

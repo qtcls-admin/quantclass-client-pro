@@ -87,11 +87,7 @@ export default function BasicStrategyLibrary() {
 
 	return (
 		<div className="flex flex-col gap-4 pt-3">
-			<MemberPromoDialog
-				open={promoOpen}
-				onOpenChange={setPromoOpen}
-				featureName="分享会专属策略库"
-			/>
+			<MemberPromoDialog open={promoOpen} onOpenChange={setPromoOpen} />
 
 			<div className="w-full">
 				<div className="flex items-center gap-2 w-auto">

@@ -139,11 +139,7 @@ function RebTimeConfigInfoBanner({ isMember }: { isMember: boolean }) {
 							</div>
 						</div>
 					</div>
-					<MemberPromoDialog
-						open={promoOpen}
-						onOpenChange={setPromoOpen}
-						featureName="分享会专属功能"
-					/>
+					<MemberPromoDialog open={promoOpen} onOpenChange={setPromoOpen} />
 				</>
 			)}
 		</div>

@@ -60,10 +60,7 @@ export default function ResearchFrameworkSourcePage() {
 	}, [])
 
 	return (
-		<MemberPromoGate
-			featureName="Config大师"
-			learnMoreLabel="如何成为Config大师?"
-		>
+		<MemberPromoGate learnMoreLabel="如何成为Config大师?">
 			<div className="flex h-full flex-1 flex-col space-y-6">
 				<ResearchConfigMasterPage className="shrink-0" />
 				<ResearchCenterPage

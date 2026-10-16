@@ -270,15 +270,11 @@ function SelectFooter({ strategy }: { strategy: BasicSelectStgType }) {
 	)
 }
 
-function SelectExclusiveGrid({
-	onSelect,
-}: {
-	onSelect: (featureName: string) => void
-}) {
+function SelectExclusiveGrid({ onSelect }: { onSelect: () => void }) {
 	return (
 		<button
 			type="button"
-			onClick={() => onSelect("分享会专属功能")}
+			onClick={onSelect}
 			className="group block w-full text-left transition-opacity hover:opacity-90"
 		>
 			<div className="flex items-center gap-2 px-0 py-2.5">
@@ -463,7 +459,6 @@ export function StrategyCard({
 	const { isAutoRocket } = useToggleAutoRealTrading()
 	const { updateSelectStg } = useStrategyManager()
 	const [promoOpen, setPromoOpen] = useState(false)
-	const [promoFeature, setPromoFeature] = useState("分享会专享功能")
 	const [deleteOpen, setDeleteOpen] = useState(false)
 	const [capWeightOpen, setCapWeightOpen] = useState(false)
 
@@ -586,12 +581,7 @@ export function StrategyCard({
 						{/* 区域三：补充详情 */}
 						<div>
 							{isBasicSelectStgType(strategy) ? (
-								<SelectExclusiveGrid
-									onSelect={(featureName) => {
-										setPromoFeature(featureName)
-										setPromoOpen(true)
-									}}
-								/>
+								<SelectExclusiveGrid onSelect={() => setPromoOpen(true)} />
 							) : isBasicTimingStgType(strategy) ? (
 								<TimingFooter strategy={strategy} />
 							) : isBasicRotationStgType(strategy) ? (
@@ -602,11 +592,7 @@ export function StrategyCard({
 				) : null}
 			</div>
 
-			<MemberPromoDialog
-				open={promoOpen}
-				onOpenChange={setPromoOpen}
-				featureName={promoFeature}
-			/>
+			<MemberPromoDialog open={promoOpen} onOpenChange={setPromoOpen} />
 		</Card>
 	)
 }

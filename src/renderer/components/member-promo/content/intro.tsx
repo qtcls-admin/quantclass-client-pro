@@ -8,11 +8,9 @@
  * See the LICENSE file and https://mariadb.com/bsl11/
  */
 
-import intro1 from "@/renderer/assets/member-promo/intro/1.png"
-import {
-	INTRO_PROMO_LEAD_MARKDOWN,
-	INTRO_PROMO_MARKDOWN,
-} from "@/renderer/components/member-promo/content/intro-markdown"
+import { INTRO_PROMO_2024_MARKDOWN } from "@/renderer/components/member-promo/content/intro-markdown-2024"
+import { INTRO_PROMO_2025_MARKDOWN } from "@/renderer/components/member-promo/content/intro-markdown-2025"
+import { INTRO_PROMO_2026_MARKDOWN } from "@/renderer/components/member-promo/content/intro-markdown-2026"
 import {
 	FEN_CLASS_LINKS,
 	FEN_CLASS_URL_BY_YEAR,
@@ -20,28 +18,41 @@ import {
 import { MemberPromoMarkdown } from "@/renderer/components/member-promo/promo-markdown"
 import { MemberPromoTabPanel } from "@/renderer/components/member-promo/promo-tab-panel"
 
-const FEN_2026 = FEN_CLASS_LINKS.find((item) => item.year === 2026)!
+export type FenIntroYear = 2026 | 2025 | 2024
 
-export function IntroPromoContent() {
+interface IntroPromoContentProps {
+	year: FenIntroYear
+}
+
+const INTRO_MARKDOWN_BY_YEAR: Record<FenIntroYear, string> = {
+	2026: INTRO_PROMO_2026_MARKDOWN,
+	2025: INTRO_PROMO_2025_MARKDOWN,
+	2024: INTRO_PROMO_2024_MARKDOWN,
+}
+
+export function IntroPromoContent({ year }: IntroPromoContentProps) {
 	const { openUrl } = window.electronAPI
+	const fenItem = FEN_CLASS_LINKS.find((item) => item.year === year)
+	const markdown = INTRO_MARKDOWN_BY_YEAR[year]
+
+	if (!fenItem) return null
+
+	const introTitle = `${String(year).slice(-2)}版邢不行策略分享会`
+
+	const buyButton = (
+		<button
+			type="button"
+			className="rounded-md border border-[#3D4C82] px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+			style={{ backgroundColor: fenItem.bg }}
+			onClick={() => openUrl(FEN_CLASS_URL_BY_YEAR[year])}
+		>
+			立即购买 · {fenItem.label}
+		</button>
+	)
 
 	return (
-		<MemberPromoTabPanel
-			title="分享会介绍"
-			images={[{ src: intro1, caption: "邢不行 · 2026 策略分享会" }]}
-		>
-			<MemberPromoMarkdown content={INTRO_PROMO_LEAD_MARKDOWN} />
-			<div className="flex justify-center py-3">
-				<button
-					type="button"
-					className="rounded-md border border-[#3D4C82] px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
-					style={{ backgroundColor: FEN_2026.bg }}
-					onClick={() => openUrl(FEN_CLASS_URL_BY_YEAR[2026])}
-				>
-					立即购买 · {FEN_2026.label}
-				</button>
-			</div>
-			<MemberPromoMarkdown content={INTRO_PROMO_MARKDOWN} />
+		<MemberPromoTabPanel title={introTitle} footer={buyButton}>
+			{markdown ? <MemberPromoMarkdown content={markdown} /> : null}
 		</MemberPromoTabPanel>
 	)
 }
