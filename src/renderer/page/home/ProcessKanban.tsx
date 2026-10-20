@@ -18,6 +18,7 @@ import { H3 } from "@/renderer/components/ui/typography"
 // import { H3 } from "@/renderer/components/ui/typography"
 import { isWindows } from "@/renderer/constant"
 import { isAutoRocketAtom, isUpdatingAtom } from "@/renderer/store"
+import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
 import { monitorProcessesQueryAtom } from "@/renderer/store/query"
 import { userAtom } from "@/renderer/store/user"
 import { checkPermission, getSelectKernal } from "@/shared/lib/permission"
@@ -38,6 +39,7 @@ export const ProcessKanban = () => {
 	const { permissions } = useAtomValue(userAtom)
 	const isMemberOrStock = checkPermission(permissions, "isMember", "isStock")
 	const selectKernal = getSelectKernal(permissions)
+	const rocketVisible = useAtomValue(rocketVisibleAtom)
 	const [{ data }] = useAtom(monitorProcessesQueryAtom)
 
 	const { VITE_XBX_ENV } = import.meta.env
@@ -62,7 +64,7 @@ export const ProcessKanban = () => {
 				{canRealTrading && isMemberOrStock && (
 					<ProcessCard data={data} kernel={selectKernal} />
 				)}
-				{canRealTrading && isMemberOrStock && (
+				{canRealTrading && isMemberOrStock && rocketVisible && (
 					<ProcessCard data={data} kernel="rocket" />
 				)}
 			</div>

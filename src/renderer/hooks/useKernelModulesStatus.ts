@@ -15,6 +15,7 @@ import {
 	useResearchKernel,
 } from "@/renderer/page/home/kernel-status"
 import { isAutoRocketAtom, isUpdatingAtom } from "@/renderer/store"
+import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
 import { monitorProcessesQueryAtom } from "@/renderer/store/query"
 import { useAtom, useAtomValue } from "jotai"
 import { useMemo } from "react"
@@ -43,16 +44,25 @@ export function useKernelModulesStatus() {
 	const [{ data: processes }] = useAtom(monitorProcessesQueryAtom)
 	const isUpdating = useAtomValue(isUpdatingAtom)
 	const isAutoRocket = useAtomValue(isAutoRocketAtom)
+	const rocketVisible = useAtomValue(rocketVisibleAtom)
 	const researchKernel = useResearchKernel()
 
 	const modules = useMemo<KernelModuleItem[]>(() => {
-		const kernels: KernelKey[] = ["fuel", researchKernel, "rocket"]
+		const kernels: KernelKey[] = rocketVisible
+			? ["fuel", researchKernel, "rocket"]
+			: ["fuel", researchKernel]
 		return kernels.map((kernel) => ({
 			kernel,
 			shortLabel: MODULE_SHORT_LABELS[kernel],
 			status: getKernelStatus(kernel, processes, isUpdating, isAutoRocket),
 		}))
-	}, [processes, isUpdating, isAutoRocket, researchKernel])
+	}, [
+		processes,
+		isUpdating,
+		isAutoRocket,
+		researchKernel,
+		rocketVisible,
+	])
 
 	const runningCount = modules.filter((m) => m.status.level === "ok").length
 	const chipStatus = getQueueChipStatus(modules)
@@ -61,6 +71,7 @@ export function useKernelModulesStatus() {
 		modules,
 		processes,
 		runningCount,
+		totalCount: modules.length,
 		chipStatus,
 	}
 }

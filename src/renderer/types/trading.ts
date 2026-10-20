@@ -24,7 +24,7 @@ export type RealMarketConfigType = {
 	qmt_path: string // QMT 安装路径
 	account_id: string // 账户号
 	qmt_port: string // QMT 端口号
-	qmt_mode: "mini_qmt" | "qmt" // QMT 模式：mini_qmt 默认，qmt 大 QMT
+	qmt_mode: "planA" | "qmt" // qmt 大 QMT（默认）；planA 券商特邀
 	ws_host: string // websocket 主机地址，未配置时为 ''
 	ws_port: string // websocket 端口号，未配置时为 ''
 	message_robot_url: string // 消息机器人 URL

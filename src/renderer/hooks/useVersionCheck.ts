@@ -9,6 +9,7 @@
  */
 
 import { useAppVersions } from "@/renderer/hooks/useAppVersion"
+import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
 import { userAtom } from "@/renderer/store/user"
 import { versionsAtom } from "@/renderer/store/versions"
 import { getSelectKernal } from "@/shared/lib/permission"
@@ -23,6 +24,7 @@ export const useVersionCheck = () => {
 	const { appVersions, isCheckingAppVersions } = useAppVersions()
 	const localVersions = useAtomValue(versionsAtom)
 	const { permissions } = useAtomValue(userAtom)
+	const rocketVisible = useAtomValue(rocketVisibleAtom)
 	const selectKernal = getSelectKernal(permissions)
 	const selectVersionKey =
 		selectKernal === "fusion" ? "fusionVersion" : "aquaVersion"
@@ -47,14 +49,23 @@ export const useVersionCheck = () => {
 			}
 		}
 
+		const rocketUpdate =
+			latestRemoteVersions?.rocket !== localVersions.rocketVersion
+
 		return {
 			fuel: latestRemoteVersions?.fuel !== localVersions.fuelVersion,
 			select:
 				latestRemoteVersions?.[selectKernal] !==
 				localVersions[selectVersionKey],
-			rocket: latestRemoteVersions?.rocket !== localVersions.rocketVersion,
+			rocket: rocketVisible && rocketUpdate,
 		}
-	}, [appVersions?.latest, localVersions, selectKernal, selectVersionKey])
+	}, [
+		appVersions?.latest,
+		localVersions,
+		selectKernal,
+		selectVersionKey,
+		rocketVisible,
+	])
 
 	// 检查是否有任何更新
 	const hasAnyUpdate = useMemo(() => {

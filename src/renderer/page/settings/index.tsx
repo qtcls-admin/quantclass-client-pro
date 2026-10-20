@@ -32,6 +32,7 @@ import { useSettings } from "@/renderer/hooks/useSettings"
 import { useVersionCheck } from "@/renderer/hooks/useVersionCheck"
 import { cn } from "@/renderer/lib/utils"
 import Contributors from "@/renderer/page/settings/contributors"
+import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
 import { isAutoLoginAtom, versionListAtom } from "@/renderer/store/storage"
 import { userAtom } from "@/renderer/store/user"
 import { useLocalVersions, versionsAtom } from "@/renderer/store/versions"
@@ -63,6 +64,7 @@ import { AboutPage } from "./about"
 export default function SettingsPage() {
 	const [showContributors, setShowContributors] = useState(false)
 	const { permissions } = useAtomValue(userAtom)
+	const rocketVisible = useAtomValue(rocketVisibleAtom)
 	const { checkWithToast } = usePermissionCheck()
 	const isMemberOrStock = checkPermission(permissions, "isMember", "isStock")
 	const isMember = checkPermission(permissions, "isMember")
@@ -206,8 +208,11 @@ export default function SettingsPage() {
 				await killAllKernals(true)
 
 				// -- 更新内核
-				for (const kernal of ["fuel", selectKernal, "rocket"]) {
-					await invokeUpdateKernal(kernal as KernalType)
+				const kernalsToUpdate: KernalType[] = rocketVisible
+					? ["fuel", selectKernal, "rocket"]
+					: ["fuel", selectKernal]
+				for (const kernal of kernalsToUpdate) {
+					await invokeUpdateKernal(kernal)
 				}
 				await refetchLocalVersions()
 				toast.success("内核更新完成", {
@@ -266,7 +271,12 @@ export default function SettingsPage() {
 				</div>
 
 				<AboutPage className="border p-2 rounded-lg max-h-72 overflow-y-auto shadow-inner bg-neutral-50/60 dark:bg-neutral-900" />
-				<div className="grid grid-cols-3">
+				<div
+					className={cn(
+						"grid",
+						rocketVisible ? "grid-cols-3" : "grid-cols-2",
+					)}
+				>
 					<KernalVersion
 						name="fuel"
 						title="数据内核"
@@ -275,24 +285,23 @@ export default function SettingsPage() {
 						appVersions={appVersions}
 					/>
 
-					<>
-						<KernalVersion
-							name={selectKernal}
-							title="选股内核"
-							Icon={SquareFunction}
-							versionKey={selectVersionKey}
-							appVersions={appVersions}
-						/>
+					<KernalVersion
+						name={selectKernal}
+						title="选股内核"
+						Icon={SquareFunction}
+						versionKey={selectVersionKey}
+						appVersions={appVersions}
+					/>
 
+					{rocketVisible ? (
 						<KernalVersion
 							name="rocket"
 							title="下单内核"
 							Icon={Blocks}
 							versionKey="rocketVersion"
 							appVersions={appVersions}
-							disabled={window.electron?.process?.platform === "darwin"}
 						/>
-					</>
+					) : null}
 				</div>
 			</div>
 

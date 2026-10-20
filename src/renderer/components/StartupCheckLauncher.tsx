@@ -13,9 +13,11 @@ import {
 	type StartupCheckStep,
 } from "@/renderer/components/StartupCheckDialog"
 import type { StartupCheckFinishedStep } from "@/renderer/components/StartupCheckDialog"
+import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
+import { realMarketConfigSchemaAtom } from "@/renderer/store/storage"
 import { startupCheckManualTriggerAtom } from "@/renderer/store/startup-check"
 import { userAtom } from "@/renderer/store/user"
-import { useAtomValue } from "jotai"
+import { useAtomValue, useSetAtom } from "jotai"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 const {
@@ -91,6 +93,8 @@ export async function runDataConsistencyCheck(): Promise<DataConsistencyCheckRes
 
 export function StartupCheckLauncher() {
 	const manualTrigger = useAtomValue(startupCheckManualTriggerAtom)
+	const setRocketVisible = useSetAtom(rocketVisibleAtom)
+	const qmtMode = useAtomValue(realMarketConfigSchemaAtom).qmt_mode
 	const { isLoggedIn, user } = useAtomValue(userAtom)
 	const [open, setOpen] = useState(false)
 	const didAutoLaunchRef = useRef(false)
@@ -148,6 +152,7 @@ export function StartupCheckLauncher() {
 				title: "QMT 连通性",
 				run: async () => {
 					const res = await checkStartupQmtConnect()
+					setRocketVisible(res.ok && qmtMode === "planA")
 					return {
 						ok: res.ok,
 						detail: res.detail ?? res.message,
@@ -160,7 +165,7 @@ export function StartupCheckLauncher() {
 				run: runDataConsistencyCheck,
 			},
 		],
-		[isLoggedIn, user],
+		[isLoggedIn, user, setRocketVisible, qmtMode],
 	)
 
 	return (

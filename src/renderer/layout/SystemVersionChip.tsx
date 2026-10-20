@@ -77,7 +77,7 @@ export function SystemVersionChip({ level }: SystemVersionChipProps) {
 	const navigate = useNavigate()
 	const [showVersionUpdate, setShowVersionUpdate] = useState(false)
 	const [showQmtMode, setShowQmtMode] = useState(false)
-	const qmtMode = useAtomValue(realMarketConfigSchemaAtom).qmt_mode ?? "mini_qmt"
+	const qmtMode = useAtomValue(realMarketConfigSchemaAtom).qmt_mode ?? "qmt"
 
 	useEffect(() => {
 		const timer = setInterval(() => {
@@ -90,7 +90,7 @@ export function SystemVersionChip({ level }: SystemVersionChipProps) {
 	const isConfirmReady = isWindows && status === UpdateStatus.Confirm
 	const chipStatus = showQmtMode ? "ok" : KERNEL_LEVEL_CHIP_STATUS[level]
 	const isRequiredUpdate = !showQmtMode && level === "required"
-	const qmtModeLabel = qmtMode === "qmt" ? "正常" : "mini"
+	const qmtModeLabel = qmtMode === "qmt" ? "正常" : "特邀"
 
 	return (
 		<div className="relative">

@@ -86,11 +86,11 @@ export async function checkQmtConnect(): Promise<StartupCheckResult> {
 
 	if (!platform.isWindows) {
 		const durationMs = Date.now() - start
-		logger.info("[startup-check] 非 Windows 平台，跳过 QMT 连通性检测")
+		logger.info("[startup-check] 非 Windows 平台，QMT 连通性视为未通过")
 		return {
-			ok: true,
-			message: "非 Windows 平台，已跳过",
-			detail: "QMT 仅支持 Windows 平台",
+			ok: false,
+			message: "QMT 连通性未通过",
+			detail: "QMT 仅支持 Windows 平台，当前环境无法完成连通性检测",
 			durationMs,
 		}
 	}

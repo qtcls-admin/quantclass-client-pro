@@ -1,10 +1,12 @@
 import { Badge } from "@/renderer/components/ui/badge"
 import { cn } from "@/renderer/lib/utils"
+import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
+import { useAtomValue } from "jotai"
 import { BadgeInfo, ShieldQuestion } from "lucide-react"
 import { Puzzle } from "lucide-react"
 import { CalendarSync } from "lucide-react"
 
-export const openLogFolders = () => {
+export const openLogFolders = (showRocket = true) => {
 	const { openUserDirectory, openDataDirectory } = window.electronAPI
 	return (
 		<>
@@ -28,20 +30,26 @@ export const openLogFolders = () => {
 			>
 				打开选股日志
 			</span>
-			，
-			<span
-				className="cursor-pointer px-1 py-0.5 border bg-muted rounded-md hover:bg-muted-foreground hover:text-muted"
-				onClick={() =>
-					openDataDirectory(["real_trading", "rocket", "data", "系统日志"])
-				}
-			>
-				打开下单日志
-			</span>
+			{showRocket ? (
+				<>
+					，
+					<span
+						className="cursor-pointer px-1 py-0.5 border bg-muted rounded-md hover:bg-muted-foreground hover:text-muted"
+						onClick={() =>
+							openDataDirectory(["real_trading", "rocket", "data", "系统日志"])
+						}
+					>
+						打开下单日志
+					</span>
+				</>
+			) : null}
 		</>
 	)
 }
 
 export function AboutPage({ className }: { className?: string }) {
+	const rocketVisible = useAtomValue(rocketVisibleAtom)
+
 	return (
 		<div className={cn("space-y-3 text-sm leading-loose", className)}>
 			<div className="space-y-1">
@@ -49,7 +57,11 @@ export function AboutPage({ className }: { className?: string }) {
 					<BadgeInfo size={16} /> 客户端是什么？
 				</p>
 				<div>
-					客户端是一个“自动化调度器”。它不直接做数据更新、选股或下单，而是帮你生成各个模块需要的配置文件，并按固定频率唤醒对应内核，帮助你把策略从数据到交易的全过程自动化、可管可控。
+					客户端是一个“自动化调度器”。它不直接做数据更新、选股
+					{rocketVisible ? "或下单" : ""}
+					，而是帮你生成各个模块需要的配置文件，并按固定频率唤醒对应内核，帮助你把策略从数据到
+					{rocketVisible ? "交易" : "选股"}
+					的全过程自动化、可管可控。
 				</div>
 			</div>
 			<div className="space-y-1">
@@ -79,15 +91,17 @@ export function AboutPage({ className }: { className?: string }) {
 						</Badge>
 						。
 					</li>
-					<li>
-						<span className="font-bold">Rocket（下单内核）</span>
-						：仅在交易时段内工作，负责根据计划执行下单。运行时产生“下单相关日志”；运行时在Windows
-						任务管理器可见进程
-						<Badge className="font-mono" variant="outline">
-							rocket.exe
-						</Badge>
-						。
-					</li>
+					{rocketVisible ? (
+						<li>
+							<span className="font-bold">Rocket（下单内核）</span>
+							：仅在交易时段内工作，负责根据计划执行下单。运行时产生“下单相关日志”；运行时在Windows
+							任务管理器可见进程
+							<Badge className="font-mono" variant="outline">
+								rocket.exe
+							</Badge>
+							。
+						</li>
+					) : null}
 				</ul>
 			</div>
 			<div className="space-y-1">
@@ -97,8 +111,11 @@ export function AboutPage({ className }: { className?: string }) {
 				<ul className="list-disc pl-4">
 					<li>
 						<span className="font-bold">频率与顺序</span>
-						：客户端<u className="text-primary">每分钟</u>依次唤醒 Rocket → Fuel
-						→ Aqua / Fusion（单进程串行）。
+						：客户端<u className="text-primary">每分钟</u>依次唤醒{" "}
+						{rocketVisible
+							? "Rocket → Fuel → Aqua / Fusion"
+							: "Fuel → Aqua / Fusion"}
+						（单进程串行）。
 					</li>
 					<li>
 						<span className="font-bold">占用检测</span>
@@ -108,13 +125,16 @@ export function AboutPage({ className }: { className?: string }) {
 						<span className="font-bold">边界明确</span>
 						：客户端只负责“叫醒与编排”，各内核各自执行、各自记录日志。
 					</li>
-					<li>
-						<span className="font-bold">交易时段</span>
-						：Rocket 仅在交易时段内工作，其他时间不唤醒。
-					</li>
+					{rocketVisible ? (
+						<li>
+							<span className="font-bold">交易时段</span>
+							：Rocket 仅在交易时段内工作，其他时间不唤醒。
+						</li>
+					) : null}
 					<li>
 						<span className="font-bold">运行逻辑</span>
-						：数据内核更新数据，选股内核基于最新数据生成计划，下单内核按时加载并执行计划。
+						：数据内核更新数据，选股内核基于最新数据生成计划
+						{rocketVisible ? "，下单内核按时加载并执行计划" : ""}。
 					</li>
 				</ul>
 			</div>
@@ -125,7 +145,8 @@ export function AboutPage({ className }: { className?: string }) {
 				<ul className="list-disc pl-4">
 					<li>
 						<span className="font-bold">日志可见</span>
-						：数据更新请看“数据更新日志”，选股请看“选股日志”，下单相关请看对应日志。
+						：数据更新请看“数据更新日志”，选股请看“选股日志”
+						{rocketVisible ? "，下单相关请看对应日志" : ""}。
 					</li>
 					<li>
 						<span className="font-bold">进程可见</span>
@@ -140,11 +161,16 @@ export function AboutPage({ className }: { className?: string }) {
 						{" / "}
 						<Badge className="font-mono" variant="outline">
 							fusion.exe
-						</Badge>{" "}
-						或{" "}
-						<Badge className="font-mono" variant="outline">
-							rocket.exe
-						</Badge>{" "}
+						</Badge>
+						{rocketVisible ? (
+							<>
+								{" "}
+								或{" "}
+								<Badge className="font-mono" variant="outline">
+									rocket.exe
+								</Badge>
+							</>
+						) : null}{" "}
 						，用于确认各内核运行状态。
 					</li>
 					<li>
@@ -153,7 +179,8 @@ export function AboutPage({ className }: { className?: string }) {
 						启动但是未执行，🟢 表示正在运行。
 					</li>
 					<li>
-						<span className="font-bold">日志文件夹</span>： {openLogFolders()}。
+						<span className="font-bold">日志文件夹</span>：{" "}
+						{openLogFolders(rocketVisible)}。
 					</li>
 				</ul>
 			</div>

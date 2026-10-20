@@ -57,7 +57,7 @@ export enum Channels {
 export type RocketQmtMode = "mini_qmt" | "qmt"
 
 export async function getRocketQmtMode(): Promise<RocketQmtMode> {
-	const mode = await store.getValue("real_market_config.qmt_mode", "mini_qmt")
+	const mode = await store.getValue("real_market_config.qmt_mode", "qmt")
 	return mode === "qmt" ? "qmt" : "mini_qmt"
 }
 

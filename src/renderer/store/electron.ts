@@ -73,7 +73,7 @@ export const realMarketConfigAtom = atomWithElectronStore<RealMarketConfigType>(
 		qmt_path: "",
 		account_id: "",
 		qmt_port: "58610",
-		qmt_mode: "mini_qmt",
+		qmt_mode: "qmt",
 		ws_host: "",
 		ws_port: "",
 		message_robot_url: "",
