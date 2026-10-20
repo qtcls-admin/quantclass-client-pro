@@ -16,6 +16,7 @@ import {
 import { cn } from "@/renderer/lib/utils"
 import { ProcessCard } from "@/renderer/page/home/ProcessKanban"
 import { isAutoRocketAtom, isUpdatingAtom } from "@/renderer/store"
+import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
 import { monitorProcessesQueryAtom } from "@/renderer/store/query"
 import { useAtom, useAtomValue } from "jotai"
 
@@ -128,11 +129,14 @@ function KernelStatusLine({
 
 export function TradingModuleStatusStack() {
 	const researchKernel = useResearchKernel()
+	const rocketVisible = useAtomValue(rocketVisibleAtom)
 
 	return (
 		<div className="flex flex-col items-end gap-1.5 shrink-0">
 			<KernelStatusLine label="选股" kernel={researchKernel} />
-			<KernelStatusLine label="下单" kernel="rocket" />
+			{rocketVisible ? (
+				<KernelStatusLine label="下单" kernel="rocket" />
+			) : null}
 		</div>
 	)
 }

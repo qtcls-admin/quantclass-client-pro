@@ -76,7 +76,7 @@ export function OverviewMetrics({ showFinanceInfo }: OverviewMetricsProps) {
 		refetchInterval: 1000 * 90,
 	})
 	const { running, total, paused } = useStrategyRunStats()
-	const { runningCount, chipStatus } = useKernelModulesStatus()
+	const { runningCount, totalCount, chipStatus } = useKernelModulesStatus()
 	const unreadNotificationCount = useAtomValue(unreadNotificationCountAtom)
 
 	const subscribedCount = productList.length
@@ -175,7 +175,9 @@ export function OverviewMetrics({ showFinanceInfo }: OverviewMetricsProps) {
 				</div>
 				<div className="border border-border rounded-lg px-3 py-2.5 bg-background">
 					<div className="text-xs text-muted-foreground mb-1">运行内核</div>
-					<div className={queueMetricClass}>{runningCount}/3</div>
+					<div className={queueMetricClass}>
+						{runningCount}/{totalCount}
+					</div>
 				</div>
 				<div className="border border-border rounded-lg px-3 py-2.5 bg-background">
 					<div className="text-xs text-muted-foreground mb-1">未读通知</div>

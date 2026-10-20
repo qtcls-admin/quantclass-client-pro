@@ -31,9 +31,9 @@ const CHIP_TEXT: Record<KernelStatusLevel, string> = {
 }
 
 export function KernelModuleQueueChip() {
-	const { modules, processes, chipStatus, runningCount } =
+	const { modules, processes, chipStatus, runningCount, totalCount } =
 		useKernelModulesStatus()
-	const chipValue = `${runningCount}/3 运行中`
+	const chipValue = `${runningCount}/${totalCount} 运行中`
 
 	return (
 		<Popover>

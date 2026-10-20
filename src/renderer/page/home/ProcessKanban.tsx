@@ -18,6 +18,7 @@ import { H3 } from "@/renderer/components/ui/typography"
 // import { H3 } from "@/renderer/components/ui/typography"
 import { isWindows } from "@/renderer/constant"
 import { isAutoRocketAtom, isUpdatingAtom } from "@/renderer/store"
+import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
 import { monitorProcessesQueryAtom } from "@/renderer/store/query"
 import { userAtom } from "@/renderer/store/user"
 import dayjs from "dayjs"
@@ -34,6 +35,7 @@ import { useMemo } from "react"
 
 export const ProcessKanban = () => {
 	const { isMember } = useAtomValue(userAtom)
+	const rocketVisible = useAtomValue(rocketVisibleAtom)
 	const [{ data }] = useAtom(monitorProcessesQueryAtom)
 
 	const { VITE_XBX_ENV } = import.meta.env
@@ -58,7 +60,7 @@ export const ProcessKanban = () => {
 				{canRealTrading && isMember && (
 					<ProcessCard data={data} kernel="fusion" />
 				)}
-				{canRealTrading && isMember && (
+				{canRealTrading && isMember && rocketVisible && (
 					<ProcessCard data={data} kernel="rocket" />
 				)}
 			</div>

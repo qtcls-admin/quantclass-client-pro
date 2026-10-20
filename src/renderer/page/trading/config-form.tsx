@@ -8,9 +8,9 @@
  * See the LICENSE file and https://mariadb.com/bsl11/
  */
 
-import { BigQmtConfirmDialog } from "@/renderer/components/BigQmtConfirmDialog"
 import { CiccBseNoticeDialog } from "@/renderer/components/CiccBseNoticeDialog"
 import { ClearFactorCacheConfirmDialog } from "@/renderer/components/ClearFactorCacheConfirmDialog"
+import { PlanAConfirmDialog } from "@/renderer/components/PlanAConfirmDialog"
 import { PerformanceModeSelectTabs } from "@/renderer/components/select-tabs"
 import { Badge } from "@/renderer/components/ui/badge"
 import { Button } from "@/renderer/components/ui/button"
@@ -35,6 +35,7 @@ import { TabsContent } from "@/renderer/components/ui/tabs"
 import { usePermissionCheck, useToggleAutoRealTrading } from "@/renderer/hooks"
 import { useRealMarketConfig } from "@/renderer/hooks/useRealMarketConfig"
 import { realConfigEditModalAtom } from "@/renderer/store"
+import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
 import { rocketStatusQueryAtom } from "@/renderer/store/query"
 import {
 	ciccBseNoticeDismissedAtom,
@@ -54,6 +55,7 @@ import {
 	PlayCircle,
 	Save,
 	Trash2,
+	TriangleAlert,
 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -66,26 +68,23 @@ const {
 	rendererLog,
 	openUrl,
 	checkKernalRunning,
+	checkStartupQmtConnect,
 } = window.electronAPI
 
 const QmtConfigFieldsSchema = z.object({
 	qmt_path: z.string(),
 	account_id: z.string().min(1, { message: "账户号未填写" }),
 	qmt_port: z.string().min(1, { message: "QMT 端口号未填写" }),
-	qmt_mode: z.enum(["mini_qmt", "qmt"]),
+	qmt_mode: z.enum(["planA", "qmt"]),
 	ws_host: z.string(),
 	ws_port: z.string(),
 })
-
-function hasBigQmtWsConfig(wsHost?: string, wsPort?: string) {
-	return !!wsHost?.trim() || !!wsPort?.trim()
-}
 
 function refineQmtPathRequired(
 	data: z.infer<typeof QmtConfigFieldsSchema>,
 	ctx: z.RefinementCtx,
 ) {
-	if (data.qmt_mode === "mini_qmt" && !data.qmt_path.trim()) {
+	if (data.qmt_mode !== "qmt" && !data.qmt_path.trim()) {
 		ctx.addIssue({
 			code: z.ZodIssueCode.custom,
 			message: "QMT 安装路径未填写",
@@ -121,7 +120,8 @@ function refineQmtConfig(
 	refineBigQmtWsOptional(data, ctx)
 }
 
-export const QmtConfigSchema = QmtConfigFieldsSchema.superRefine(refineQmtConfig)
+export const QmtConfigSchema =
+	QmtConfigFieldsSchema.superRefine(refineQmtConfig)
 
 const RealMarketFormSchema = z.object({
 	date_start: z.date().optional(),
@@ -168,11 +168,12 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 	const { setPerformanceMode } = useRealMarketConfig()
 
 	const setRealConfigEditModal = useSetAtom(realConfigEditModalAtom)
+	const setRocketVisible = useSetAtom(rocketVisibleAtom)
 	const { isAutoRocket, handleToggleAutoRocket } = useToggleAutoRealTrading()
 	const [ciccDismissed, setCiccDismissed] = useAtom(ciccBseNoticeDismissedAtom)
 	const [showCiccNotice, setShowCiccNotice] = useState(false)
 	const [factorCacheConfirmOpen, setFactorCacheConfirmOpen] = useState(false)
-	const [bigQmtConfirmOpen, setBigQmtConfirmOpen] = useState(false)
+	const [planAConfirmOpen, setPlanAConfirmOpen] = useState(false)
 
 	const isCiccBroker =
 		getBrokerNameByAccountId(realMarketConfig.account_id ?? "") === "中金"
@@ -200,7 +201,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 			qmt_path: realMarketConfig.qmt_path ?? "",
 			account_id: realMarketConfig.account_id ?? "",
 			qmt_port: realMarketConfig.qmt_port ?? "58610",
-			qmt_mode: realMarketConfig.qmt_mode ?? "mini_qmt",
+			qmt_mode: realMarketConfig.qmt_mode ?? "qmt",
 			ws_host: realMarketConfig.ws_host ?? "",
 			ws_port: realMarketConfig.ws_port ?? "",
 		}),
@@ -221,10 +222,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 
 	const qmtAccountId = qmtForm.watch("account_id")
 	const qmtMode = qmtForm.watch("qmt_mode")
-	const wsHost = qmtForm.watch("ws_host")
-	const wsPort = qmtForm.watch("ws_port")
 	const isBigQmtMode = qmtMode === "qmt"
-	const hasConfiguredBigQmtWs = hasBigQmtWsConfig(wsHost, wsPort)
 	const isQmtCiccBroker =
 		getBrokerNameByAccountId(qmtAccountId ?? "") === "中金"
 
@@ -353,6 +351,24 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 		}
 	}
 
+	const checkPlanAQmtConnectivityAfterSave = async () => {
+		if (qmtForm.getValues("qmt_mode") !== "planA") return true
+
+		try {
+			const res = await checkStartupQmtConnect()
+			setRocketVisible(res.ok)
+			if (res.ok) return true
+			toast.dismiss()
+			toast.error(res.message, { description: res.detail })
+			return false
+		} catch {
+			setRocketVisible(false)
+			toast.dismiss()
+			toast.error("QMT 连通性检查失败，请稍后重试")
+			return false
+		}
+	}
+
 	const handleSaveQmt = async () => {
 		try {
 			if (!(await ensureCanEditConfig())) return false
@@ -362,7 +378,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 			await persistQmtConfig()
 
 			toast.success("QMT 配置保存成功")
-			return true
+			return await checkPlanAQmtConnectivityAfterSave()
 		} catch (error) {
 			toast.error("QMT 配置保存失败")
 			return false
@@ -924,18 +940,18 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 								render={({ field }) => (
 									<FormItem className="col-span-2">
 										<FormLabel className="!mt-0 flex items-center gap-1">
-											<span className="font-semibold">QMT 模式切换</span>{" "}
+											<span className="font-semibold">交易模式切换</span>{" "}
 											<span className="text-destructive">*</span>
 											<ButtonTooltip
 												content={
 													<div className="space-y-1.5">
 														<p>
-															1.
-															miniQMT：qmt量化常用模式，如果券商没停，就没必要切换到其它模式。
+															1. 大QMT（默认）：基于论坛 websocket
+															方案，提供的【大QMT版】交易模式。
 														</p>
 														<p>
-															2.
-															大QMT：基于论坛websocket方案，提供的【大QMT版】交易模式。
+															2. 券商特邀：部分券商提供的 QMT 特邀通道，需配置
+															QMT 安装路径。
 														</p>
 													</div>
 												}
@@ -951,8 +967,8 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 												disabled={!user?.isMember}
 												value={field.value}
 												onValueChange={(value) => {
-													if (value === "qmt" && !hasConfiguredBigQmtWs) {
-														setBigQmtConfirmOpen(true)
+													if (value === "planA") {
+														setPlanAConfirmOpen(true)
 														return
 													}
 													field.onChange(value)
@@ -961,22 +977,22 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 											>
 												<FormItem className="flex items-center space-x-1 space-y-0">
 													<FormControl>
-														<RadioGroupItem value="mini_qmt" />
-													</FormControl>
-													<FormLabel
-														className={`${field.value === "mini_qmt" ? "font-bold" : "font-normal"}`}
-													>
-														miniQMT（默认模式）
-													</FormLabel>
-												</FormItem>
-												<FormItem className="flex items-center space-x-1 space-y-0">
-													<FormControl>
 														<RadioGroupItem value="qmt" />
 													</FormControl>
 													<FormLabel
 														className={`${field.value === "qmt" ? "font-bold" : "font-normal"}`}
 													>
-														大QMT模式
+														Plan X（默认模式）
+													</FormLabel>
+												</FormItem>
+												<FormItem className="flex items-center space-x-1 space-y-0">
+													<FormControl>
+														<RadioGroupItem value="planA" />
+													</FormControl>
+													<FormLabel
+														className={`${field.value === "planA" ? "font-bold" : "font-normal"}`}
+													>
+														券商特邀
 													</FormLabel>
 												</FormItem>
 											</RadioGroup>
@@ -993,10 +1009,10 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 									render={({ field }) => (
 										<FormItem>
 											<FormLabel className="flex items-center gap-2 flex-wrap">
-												<span>QMT 安装路径</span>
+												<span>大QMT 安装路径</span>
 												<span className="text-destructive">*</span>
 												<Badge className="font-semibold">
-													{"<QMT 路径>/userdata_mini"}
+													{"<QMT 路径>/userdata"}
 												</Badge>
 											</FormLabel>
 											<div className="flex w-full gap-2">
@@ -1006,7 +1022,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 														readOnly
 														disabled={!user?.isMember}
 														onClick={() => handleFolderSelect.run()}
-														placeholder="请填写 qmt 安装路径..."
+														placeholder="<QMT 路径>/userdata"
 													/>
 												</FormControl>
 												<Button
@@ -1034,9 +1050,9 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 								render={({ field }) => (
 									<FormItem>
 										<FormLabel>
-											QMT 账户号 <span className="text-destructive">*</span>{" "}
+											大QMT 账户号 <span className="text-destructive">*</span>{" "}
 											<span className="text-xs text-muted-foreground">
-												QMT账号，不清楚可以询问客户经理
+												大QMT账号，不清楚可以询问客户经理
 											</span>
 										</FormLabel>
 										<FormControl>
@@ -1051,6 +1067,29 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 									</FormItem>
 								)}
 							/>
+
+							{!isBigQmtMode && (
+								<div className="relative col-span-2 overflow-hidden rounded-xl border border-amber-200/90 bg-amber-50/70 py-3.5 pr-4 pl-5 dark:border-amber-900/70 dark:bg-amber-950/20">
+									<div className="absolute inset-y-0 left-0 w-1 bg-amber-400 dark:bg-amber-500/80" />
+									<div className="flex items-start gap-3">
+										<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/90 shadow-sm ring-1 ring-amber-200 dark:bg-amber-900/40 dark:ring-amber-800">
+											<TriangleAlert className="size-4 text-amber-500 dark:text-amber-400" />
+										</div>
+										<div className="min-w-0 space-y-0.5">
+											<p className="text-sm font-semibold text-amber-950 dark:text-amber-100">
+												保存后将自动检测 QMT 连通性
+											</p>
+											<p className="text-[13px] leading-5 text-amber-800/90 dark:text-amber-200/80">
+												若连接失败，会导致
+												<span className="font-bold text-amber-950 dark:text-amber-50">
+													无法交易
+												</span>
+												，请排查连通问题后再次保存。
+											</p>
+										</div>
+									</div>
+								</div>
+							)}
 
 							{isBigQmtMode && (
 								<>
@@ -1145,12 +1184,12 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 				onOpenChange={setShowCiccNotice}
 				onConfirm={() => setCiccDismissed(true)}
 			/>
-			<BigQmtConfirmDialog
-				open={bigQmtConfirmOpen}
-				onOpenChange={setBigQmtConfirmOpen}
+			<PlanAConfirmDialog
+				open={planAConfirmOpen}
+				onOpenChange={setPlanAConfirmOpen}
 				onConfirm={() => {
-					qmtForm.setValue("qmt_mode", "qmt")
-					setBigQmtConfirmOpen(false)
+					qmtForm.setValue("qmt_mode", "planA")
+					setPlanAConfirmOpen(false)
 				}}
 			/>
 		</>

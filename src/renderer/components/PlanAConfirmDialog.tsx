@@ -8,7 +8,7 @@
  * See the LICENSE file and https://mariadb.com/bsl11/
  */
 
-import { BigQmtAgreementContent } from "@/renderer/components/BigQmtAgreementContent"
+import { PlanAAgreementContent } from "@/renderer/components/PlanAAgreementContent"
 import { Button } from "@/renderer/components/ui/button"
 import { Checkbox } from "@/renderer/components/ui/checkbox"
 import {
@@ -25,7 +25,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 const SCROLL_THRESHOLD = 16
 
-interface BigQmtConfirmDialogProps {
+interface PlanAConfirmDialogProps {
 	open: boolean
 	onOpenChange: (open: boolean) => void
 	onConfirm: () => void
@@ -38,14 +38,15 @@ function isScrolledToBottom(element: HTMLDivElement) {
 	)
 }
 
-export function BigQmtConfirmDialog({
+export function PlanAConfirmDialog({
 	open,
 	onOpenChange,
 	onConfirm,
-}: BigQmtConfirmDialogProps) {
+}: PlanAConfirmDialogProps) {
 	const scrollRef = useRef<HTMLDivElement>(null)
 	const [hasScrolledToEnd, setHasScrolledToEnd] = useState(false)
 	const [hasAgreed, setHasAgreed] = useState(false)
+	const [hasConfirmedQmtReady, setHasConfirmedQmtReady] = useState(false)
 
 	const updateScrollState = useCallback(() => {
 		const element = scrollRef.current
@@ -57,6 +58,7 @@ export function BigQmtConfirmDialog({
 		if (!open) {
 			setHasScrolledToEnd(false)
 			setHasAgreed(false)
+			setHasConfirmedQmtReady(false)
 			return
 		}
 
@@ -68,7 +70,7 @@ export function BigQmtConfirmDialog({
 		requestAnimationFrame(updateScrollState)
 	}, [open, updateScrollState])
 
-	const canConfirm = hasScrolledToEnd && hasAgreed
+	const canConfirm = hasScrolledToEnd && hasAgreed && hasConfirmedQmtReady
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -83,10 +85,10 @@ export function BigQmtConfirmDialog({
 			>
 				<DialogHeader className="space-y-2 border-b px-6 py-5 text-center sm:text-center">
 					<DialogTitle className="text-base">
-						《大 QMT 客户端切换说明》
+						《交易模式切换说明》
 					</DialogTitle>
 					<DialogDescription>
-						切换至大 QMT 模式前，请仔细阅读以下说明
+						切换至券商特邀模式前，请仔细阅读以下说明
 					</DialogDescription>
 				</DialogHeader>
 
@@ -96,7 +98,7 @@ export function BigQmtConfirmDialog({
 						onScroll={updateScrollState}
 						className="h-[360px] overflow-y-scroll rounded-lg border bg-muted/30 px-4 py-3 shadow-inner"
 					>
-						<BigQmtAgreementContent />
+						<PlanAAgreementContent />
 					</div>
 				</div>
 
@@ -116,14 +118,14 @@ export function BigQmtConfirmDialog({
 
 					<div className="flex items-start gap-3 rounded-md border bg-background px-3 py-3">
 						<Checkbox
-							id="big-qmt-agreement"
+							id="plan-a-agreement"
 							checked={hasAgreed}
 							disabled={!hasScrolledToEnd}
 							onCheckedChange={(checked) => setHasAgreed(checked === true)}
 							className="mt-0.5"
 						/>
 						<Label
-							htmlFor="big-qmt-agreement"
+							htmlFor="plan-a-agreement"
 							className={cn(
 								"text-sm leading-snug",
 								hasScrolledToEnd
@@ -131,7 +133,30 @@ export function BigQmtConfirmDialog({
 									: "cursor-not-allowed text-muted-foreground",
 							)}
 						>
-							我已阅读并理解《大 QMT 客户端切换说明》
+							我已阅读并理解《交易模式切换说明》
+						</Label>
+					</div>
+
+					<div className="flex items-start gap-3 rounded-md border bg-background px-3 py-3">
+						<Checkbox
+							id="plan-a-qmt-ready"
+							checked={hasConfirmedQmtReady}
+							disabled={!hasScrolledToEnd}
+							onCheckedChange={(checked) =>
+								setHasConfirmedQmtReady(checked === true)
+							}
+							className="mt-0.5"
+						/>
+						<Label
+							htmlFor="plan-a-qmt-ready"
+							className={cn(
+								"text-sm leading-snug",
+								hasScrolledToEnd
+									? "cursor-pointer font-medium"
+									: "cursor-not-allowed text-muted-foreground",
+							)}
+						>
+							我确认已完成大 QMT 相关配置，并已确保 QMT 连接正常
 						</Label>
 					</div>
 				</div>
