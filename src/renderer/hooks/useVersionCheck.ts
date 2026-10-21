@@ -9,7 +9,7 @@
  */
 
 import { useAppVersions } from "@/renderer/hooks/useAppVersion"
-import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
+import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 import { versionsAtom } from "@/renderer/store/versions"
 import { useAtomValue } from "jotai"
 import { useMemo } from "react"
@@ -21,7 +21,7 @@ import { useMemo } from "react"
 export const useVersionCheck = () => {
 	const { appVersions, isCheckingAppVersions } = useAppVersions()
 	const localVersions = useAtomValue(versionsAtom)
-	const rocketVisible = useAtomValue(rocketVisibleAtom)
+	const rocketVisible = useRocketVisible()
 
 	// 检查是否有客户端版本更新
 	const hasClientUpdate = useMemo(() => {

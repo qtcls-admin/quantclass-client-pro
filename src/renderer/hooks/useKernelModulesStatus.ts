@@ -15,7 +15,7 @@ import {
 	useResearchKernel,
 } from "@/renderer/page/home/kernel-status"
 import { isAutoRocketAtom, isUpdatingAtom } from "@/renderer/store"
-import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
+import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 import { monitorProcessesQueryAtom } from "@/renderer/store/query"
 import { useAtom, useAtomValue } from "jotai"
 import { useMemo } from "react"
@@ -45,7 +45,7 @@ export function useKernelModulesStatus() {
 	const [{ data: processes }] = useAtom(monitorProcessesQueryAtom)
 	const isUpdating = useAtomValue(isUpdatingAtom)
 	const isAutoRocket = useAtomValue(isAutoRocketAtom)
-	const rocketVisible = useAtomValue(rocketVisibleAtom)
+	const rocketVisible = useRocketVisible()
 	const researchKernel = useResearchKernel()
 
 	const modules = useMemo<KernelModuleItem[]>(() => {

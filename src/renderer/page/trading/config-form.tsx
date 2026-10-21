@@ -35,7 +35,7 @@ import { TabsContent } from "@/renderer/components/ui/tabs"
 import { usePermissionCheck, useToggleAutoRealTrading } from "@/renderer/hooks"
 import { useRealMarketConfig } from "@/renderer/hooks/useRealMarketConfig"
 import { realConfigEditModalAtom } from "@/renderer/store"
-import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
+import { qmtConnectOkAtom } from "@/renderer/store/rocket-visible"
 import { rocketStatusQueryAtom } from "@/renderer/store/query"
 import {
 	ciccBseNoticeDismissedAtom,
@@ -75,7 +75,7 @@ const QmtConfigFieldsSchema = z.object({
 	qmt_path: z.string(),
 	account_id: z.string().min(1, { message: "账户号未填写" }),
 	qmt_port: z.string().min(1, { message: "QMT 端口号未填写" }),
-	qmt_mode: z.enum(["planA", "qmt"]),
+	qmt_mode: z.enum(["planA", "planX"]),
 	ws_host: z.string(),
 	ws_port: z.string(),
 })
@@ -84,7 +84,7 @@ function refineQmtPathRequired(
 	data: z.infer<typeof QmtConfigFieldsSchema>,
 	ctx: z.RefinementCtx,
 ) {
-	if (data.qmt_mode !== "qmt" && !data.qmt_path.trim()) {
+	if (data.qmt_mode === "planA" && !data.qmt_path.trim()) {
 		ctx.addIssue({
 			code: z.ZodIssueCode.custom,
 			message: "QMT 安装路径未填写",
@@ -97,7 +97,7 @@ function refineBigQmtWsOptional(
 	data: z.infer<typeof QmtConfigFieldsSchema>,
 	ctx: z.RefinementCtx,
 ) {
-	if (data.qmt_mode !== "qmt") return
+	if (data.qmt_mode === "planA") return
 
 	const wsPort = data.ws_port.trim()
 	if (!wsPort) return
@@ -168,7 +168,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 	const { setPerformanceMode } = useRealMarketConfig()
 
 	const setRealConfigEditModal = useSetAtom(realConfigEditModalAtom)
-	const setRocketVisible = useSetAtom(rocketVisibleAtom)
+	const setQmtConnectOk = useSetAtom(qmtConnectOkAtom)
 	const { isAutoRocket, handleToggleAutoRocket } = useToggleAutoRealTrading()
 	const [ciccDismissed, setCiccDismissed] = useAtom(ciccBseNoticeDismissedAtom)
 	const [showCiccNotice, setShowCiccNotice] = useState(false)
@@ -201,7 +201,8 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 			qmt_path: realMarketConfig.qmt_path ?? "",
 			account_id: realMarketConfig.account_id ?? "",
 			qmt_port: realMarketConfig.qmt_port ?? "58610",
-			qmt_mode: realMarketConfig.qmt_mode ?? "qmt",
+			qmt_mode:
+				realMarketConfig.qmt_mode === "planA" ? "planA" : "planX",
 			ws_host: realMarketConfig.ws_host ?? "",
 			ws_port: realMarketConfig.ws_port ?? "",
 		}),
@@ -222,18 +223,18 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 
 	const qmtAccountId = qmtForm.watch("account_id")
 	const qmtMode = qmtForm.watch("qmt_mode")
-	const isBigQmtMode = qmtMode === "qmt"
+	const isPlanA = qmtMode === "planA"
 	const isQmtCiccBroker =
 		getBrokerNameByAccountId(qmtAccountId ?? "") === "中金"
 
 	useEffect(() => {
-		if (isBigQmtMode) {
+		if (!isPlanA) {
 			qmtForm.clearErrors("qmt_path")
 			return
 		}
 		qmtForm.clearErrors(["ws_host", "ws_port"])
 		void qmtForm.trigger("qmt_path")
-	}, [isBigQmtMode, qmtForm])
+	}, [isPlanA, qmtForm])
 
 	useEffect(() => {
 		if (isCiccBroker) {
@@ -268,7 +269,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 			qmt_path: values.qmt_path,
 			account_id: values.account_id,
 			qmt_port: values.qmt_port,
-			qmt_mode: values.qmt_mode,
+			qmt_mode: values.qmt_mode === "planA" ? "planA" : "planX",
 			ws_host: values.ws_host,
 			ws_port: values.ws_port,
 			...(isQmtCiccBroker ? { filter_bj: true } : {}),
@@ -356,13 +357,13 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 
 		try {
 			const res = await checkStartupQmtConnect()
-			setRocketVisible(res.ok)
+			setQmtConnectOk(res.ok)
 			if (res.ok) return true
 			toast.dismiss()
 			toast.error(res.message, { description: res.detail })
 			return false
 		} catch {
-			setRocketVisible(false)
+			setQmtConnectOk(false)
 			toast.dismiss()
 			toast.error("QMT 连通性检查失败，请稍后重试")
 			return false
@@ -965,7 +966,9 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 										<FormControl>
 											<RadioGroup
 												disabled={!user?.isMember}
-												value={field.value}
+												value={
+													field.value === "planA" ? "planA" : "planX"
+												}
 												onValueChange={(value) => {
 													if (value === "planA") {
 														setPlanAConfirmOpen(true)
@@ -977,10 +980,10 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 											>
 												<FormItem className="flex items-center space-x-1 space-y-0">
 													<FormControl>
-														<RadioGroupItem value="qmt" />
+														<RadioGroupItem value="planX" />
 													</FormControl>
 													<FormLabel
-														className={`${field.value === "qmt" ? "font-bold" : "font-normal"}`}
+														className={`${field.value !== "planA" ? "font-bold" : "font-normal"}`}
 													>
 														Plan X（默认模式）
 													</FormLabel>
@@ -1002,7 +1005,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 								)}
 							/>
 
-							{!isBigQmtMode && (
+							{isPlanA && (
 								<FormField
 									name="qmt_path"
 									control={qmtForm.control}
@@ -1068,7 +1071,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 								)}
 							/>
 
-							{!isBigQmtMode && (
+							{isPlanA && (
 								<div className="relative col-span-2 overflow-hidden rounded-xl border border-amber-200/90 bg-amber-50/70 py-3.5 pr-4 pl-5 dark:border-amber-900/70 dark:bg-amber-950/20">
 									<div className="absolute inset-y-0 left-0 w-1 bg-amber-400 dark:bg-amber-500/80" />
 									<div className="flex items-start gap-3">
@@ -1091,7 +1094,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 								</div>
 							)}
 
-							{isBigQmtMode && (
+							{!isPlanA && (
 								<>
 									<FormField
 										name="ws_host"

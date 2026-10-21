@@ -1,7 +1,6 @@
 import { Badge } from "@/renderer/components/ui/badge"
 import { cn } from "@/renderer/lib/utils"
-import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
-import { useAtomValue } from "jotai"
+import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 import { BadgeInfo, ShieldQuestion } from "lucide-react"
 import { Puzzle } from "lucide-react"
 import { CalendarSync } from "lucide-react"
@@ -48,7 +47,7 @@ export const openLogFolders = (showRocket = true) => {
 }
 
 export function AboutPage({ className }: { className?: string }) {
-	const rocketVisible = useAtomValue(rocketVisibleAtom)
+	const rocketVisible = useRocketVisible()
 
 	return (
 		<div className={cn("space-y-3 text-sm leading-loose", className)}>

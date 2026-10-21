@@ -10,9 +10,9 @@
 
 import { atomWithStorage } from "jotai/utils"
 
-/** 是否显示 Rocket（下单内核）；连通性自检通过且模式为 planA 时写入 true，默认 false */
-export const rocketVisibleAtom = atomWithStorage<boolean>(
-	"rocketVisible",
+/** QMT 连通性自检是否通过 */
+export const qmtConnectOkAtom = atomWithStorage<boolean>(
+	"qmtConnectOk",
 	false,
 	undefined,
 	{ getOnInit: true },
