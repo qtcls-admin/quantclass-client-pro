@@ -117,7 +117,20 @@ export default function StrategyReplaceDialog({
 		try {
 			const result = await importFusion(filePath as string)
 			if (!result.success || !result.jsonStr) {
-				toast.error("解析 config.py 失败")
+				toast.dismiss()
+				if (result.readonlyFiles?.length) {
+					const preview = result.readonlyFiles.slice(0, 12).join("\n")
+					const suffix =
+						result.readonlyFiles.length > 12
+							? `\n…等共 ${result.readonlyFiles.length} 个只读文件`
+							: ""
+					toast.error("导入失败：以下文件为只读", {
+						description: preview + suffix,
+						duration: 12_000,
+					})
+				} else {
+					toast.error(result.error ?? "解析 config.py 失败")
+				}
 				return
 			}
 

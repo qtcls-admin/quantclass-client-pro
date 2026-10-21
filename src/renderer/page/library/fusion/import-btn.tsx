@@ -8,6 +8,7 @@
  * See the LICENSE file and https://mariadb.com/bsl11/
  */
 
+import { useBacktestDialog } from "@/renderer/components/backtest-dialog"
 import {
 	AlertDialog,
 	AlertDialogCancel,
@@ -26,7 +27,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/renderer/components/ui/dialog"
-import { useBacktestDialog } from "@/renderer/components/backtest-dialog"
 import { TRADING_SECTION_ROUTE } from "@/renderer/constant"
 import { useToggleAutoRealTrading } from "@/renderer/hooks"
 import { useFusionManager } from "@/renderer/hooks/useFusionManager"
@@ -154,7 +154,20 @@ export default function ImportStrategyButton() {
 			await importFusion(configFilePath),
 		onSuccess: async (data) => {
 			if (!data.success || !data.jsonStr) {
-				toast.error("导入失败，请检查配置文件")
+				toast.dismiss()
+				if (data.readonlyFiles?.length) {
+					const preview = data.readonlyFiles.slice(0, 12).join("\n")
+					const suffix =
+						data.readonlyFiles.length > 12
+							? `\n…等共 ${data.readonlyFiles.length} 个只读文件`
+							: ""
+					toast.error("导入失败：以下文件为只读", {
+						description: preview + suffix,
+						duration: 12_000,
+					})
+				} else {
+					toast.error(data.error ?? "导入失败，请检查配置文件")
+				}
 				console.log("导入失败", data)
 				return
 			}
@@ -437,7 +450,9 @@ export default function ImportStrategyButton() {
 						size="sm"
 						variant="outline"
 						className="h-8 lg:flex"
-						onClick={() => navigate(`${TRADING_SECTION_ROUTE}?tab=real_trading`)}
+						onClick={() =>
+							navigate(`${TRADING_SECTION_ROUTE}?tab=real_trading`)
+						}
 					>
 						<TvMinimalPlay className="size-4 mr-2" />
 						前往实盘
