@@ -35,14 +35,16 @@ import { TabsContent } from "@/renderer/components/ui/tabs"
 import { usePermissionCheck, useToggleAutoRealTrading } from "@/renderer/hooks"
 import { useRealMarketConfig } from "@/renderer/hooks/useRealMarketConfig"
 import { realConfigEditModalAtom } from "@/renderer/store"
-import { qmtConnectOkAtom } from "@/renderer/store/rocket-visible"
 import { rocketStatusQueryAtom } from "@/renderer/store/query"
+import { qmtConnectOkAtom } from "@/renderer/store/rocket-visible"
 import {
 	ciccBseNoticeDismissedAtom,
+	planXConfigAtom,
 	realMarketConfigSchemaAtom,
 } from "@/renderer/store/storage"
 import { userAtom } from "@/renderer/store/user"
 import { getBrokerNameByAccountId } from "@/renderer/utils/broker"
+import type { AccountsConfigMap } from "@/shared/types/qmt-accounts"
 import { zodResolver } from "@hookform/resolvers/zod"
 import dayjs from "dayjs"
 import { useDebounceFn } from "etc-hooks"
@@ -80,15 +82,35 @@ const QmtConfigFieldsSchema = z.object({
 	ws_port: z.string(),
 })
 
+const PlanXConfigFieldsSchema = z.object({
+	account_id: z.string().min(1, { message: "账户号未填写" }),
+	qmt_path: z.string(),
+	exported_dir: z.string(),
+})
+
 function refineQmtPathRequired(
-	data: z.infer<typeof QmtConfigFieldsSchema>,
+	data: { qmt_path: string },
 	ctx: z.RefinementCtx,
 ) {
-	if (data.qmt_mode === "planA" && !data.qmt_path.trim()) {
+	if (!data.qmt_path.trim()) {
 		ctx.addIssue({
 			code: z.ZodIssueCode.custom,
 			message: "QMT 安装路径未填写",
 			path: ["qmt_path"],
+		})
+	}
+}
+
+function refinePlanXPathsRequired(
+	data: z.infer<typeof PlanXConfigFieldsSchema>,
+	ctx: z.RefinementCtx,
+) {
+	refineQmtPathRequired(data, ctx)
+	if (!data.exported_dir.trim()) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: "QMT 导出路径未填写",
+			path: ["exported_dir"],
 		})
 	}
 }
@@ -112,7 +134,7 @@ function refineBigQmtWsOptional(
 	}
 }
 
-function refineQmtConfig(
+function refinePlanAConfig(
 	data: z.infer<typeof QmtConfigFieldsSchema>,
 	ctx: z.RefinementCtx,
 ) {
@@ -121,7 +143,11 @@ function refineQmtConfig(
 }
 
 export const QmtConfigSchema =
-	QmtConfigFieldsSchema.superRefine(refineQmtConfig)
+	QmtConfigFieldsSchema.superRefine(refinePlanAConfig)
+
+export const PlanXConfigSchema = PlanXConfigFieldsSchema.superRefine(
+	refinePlanXPathsRequired,
+)
 
 const RealMarketFormSchema = z.object({
 	date_start: z.date().optional(),
@@ -145,10 +171,11 @@ const RealMarketFormSchema = z.object({
 
 export const RealMarketConfigSchema = RealMarketFormSchema.merge(
 	QmtConfigFieldsSchema,
-).superRefine(refineQmtConfig)
+).superRefine(refinePlanAConfig)
 
 type FormData = z.infer<typeof RealMarketFormSchema>
-type QmtFormData = z.infer<typeof QmtConfigSchema>
+type PlanAFormData = z.infer<typeof QmtConfigSchema>
+type PlanXFormData = z.infer<typeof PlanXConfigSchema>
 
 interface TradingConfigFormProps {
 	onGoToQmt?: () => void
@@ -164,6 +191,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 	const [realMarketConfig, setRealMarketConfig] = useAtom(
 		realMarketConfigSchemaAtom,
 	)
+	const [planXConfig, setPlanXConfig] = useAtom(planXConfigAtom)
 
 	const { setPerformanceMode } = useRealMarketConfig()
 
@@ -196,17 +224,25 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 		}
 	}, [realMarketConfig])
 
-	const qmtDefaultValues = useMemo(
+	const planADefaultValues = useMemo(
 		() => ({
 			qmt_path: realMarketConfig.qmt_path ?? "",
 			account_id: realMarketConfig.account_id ?? "",
 			qmt_port: realMarketConfig.qmt_port ?? "58610",
-			qmt_mode:
-				realMarketConfig.qmt_mode === "planA" ? "planA" : "planX",
+			qmt_mode: realMarketConfig.qmt_mode === "planA" ? "planA" : "planX",
 			ws_host: realMarketConfig.ws_host ?? "",
 			ws_port: realMarketConfig.ws_port ?? "",
 		}),
 		[realMarketConfig],
+	)
+
+	const planXDefaultValues = useMemo(
+		() => ({
+			account_id: planXConfig.account_id ?? "",
+			qmt_path: planXConfig.qmt_path ?? "",
+			exported_dir: planXConfig.exported_dir ?? "",
+		}),
+		[planXConfig],
 	)
 
 	const form = useForm<FormData>({
@@ -215,26 +251,52 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 		defaultValues,
 	})
 
-	const qmtForm = useForm<QmtFormData>({
+	const planAForm = useForm<PlanAFormData>({
 		mode: "onChange",
 		resolver: zodResolver(QmtConfigSchema),
-		defaultValues: qmtDefaultValues,
+		defaultValues: planADefaultValues,
 	})
 
-	const qmtAccountId = qmtForm.watch("account_id")
-	const qmtMode = qmtForm.watch("qmt_mode")
+	const planXForm = useForm<PlanXFormData>({
+		mode: "onChange",
+		resolver: zodResolver(PlanXConfigSchema),
+		defaultValues: planXDefaultValues,
+	})
+
+	const qmtMode = planAForm.watch("qmt_mode")
 	const isPlanA = qmtMode === "planA"
+	const planAAccountId = planAForm.watch("account_id")
+	const planXAccountId = planXForm.watch("account_id")
+	const activeAccountId = isPlanA ? planAAccountId : planXAccountId
 	const isQmtCiccBroker =
-		getBrokerNameByAccountId(qmtAccountId ?? "") === "中金"
+		getBrokerNameByAccountId(activeAccountId ?? "") === "中金"
+
+	useEffect(() => {
+		if (isPlanA) return
+
+		const id = planXAccountId?.trim()
+		if (!id) {
+			planXForm.setValue("qmt_path", "")
+			planXForm.setValue("exported_dir", "")
+			return
+		}
+
+		void getStoreValue("accounts", {}).then((raw) => {
+			const accounts = (raw ?? {}) as AccountsConfigMap
+			const entry = accounts[id]
+			planXForm.setValue("qmt_path", entry?.qmt_path ?? "")
+			planXForm.setValue("exported_dir", entry?.exported_dir ?? "")
+		})
+	}, [isPlanA, planXAccountId, planXForm])
 
 	useEffect(() => {
 		if (!isPlanA) {
-			qmtForm.clearErrors("qmt_path")
+			planAForm.clearErrors("qmt_path")
 			return
 		}
-		qmtForm.clearErrors(["ws_host", "ws_port"])
-		void qmtForm.trigger("qmt_path")
-	}, [isPlanA, qmtForm])
+		planAForm.clearErrors(["ws_host", "ws_port"])
+		void planAForm.trigger("qmt_path")
+	}, [isPlanA, planAForm])
 
 	useEffect(() => {
 		if (isCiccBroker) {
@@ -261,28 +323,59 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 	}
 
 	const persistQmtConfig = async () => {
-		const values = qmtForm.getValues()
 		const existing = ((await getStoreValue("real_market_config", {})) ??
 			{}) as Record<string, unknown>
-		const nextStore = {
-			...existing,
-			qmt_path: values.qmt_path,
-			account_id: values.account_id,
-			qmt_port: values.qmt_port,
-			qmt_mode: values.qmt_mode === "planA" ? "planA" : "planX",
-			ws_host: values.ws_host,
-			ws_port: values.ws_port,
-			...(isQmtCiccBroker ? { filter_bj: true } : {}),
-		}
+		const isPlanAMode = planAForm.getValues("qmt_mode") === "planA"
 
 		if (isQmtCiccBroker) {
 			form.setValue("filter_bj", "1")
 		}
 
-		await setStoreValue("real_market_config", nextStore)
+		if (isPlanAMode) {
+			const values = planAForm.getValues()
+			await setStoreValue("real_market_config", {
+				...existing,
+				qmt_path: values.qmt_path,
+				account_id: values.account_id,
+				qmt_port: values.qmt_port,
+				qmt_mode: "planA",
+				ws_host: values.ws_host,
+				ws_port: values.ws_port,
+				...(isQmtCiccBroker ? { filter_bj: true } : {}),
+			})
+			setRealMarketConfig((prev) => ({
+				...prev,
+				...values,
+				qmt_mode: "planA",
+				...(isQmtCiccBroker ? { filter_bj: "1" } : {}),
+			}))
+			return
+		}
+
+		const values = planXForm.getValues()
+		const id = values.account_id.trim()
+		const accounts = ((await getStoreValue("accounts", {})) ??
+			{}) as AccountsConfigMap
+		await setStoreValue("accounts", {
+			...accounts,
+			[id]: {
+				qmt_path: values.qmt_path,
+				exported_dir: values.exported_dir,
+			},
+		})
+		const planAQmt = planAForm.getValues()
+		await setStoreValue("real_market_config", {
+			...existing,
+			qmt_mode: "planX",
+			qmt_port: planAQmt.qmt_port,
+			ws_host: planAQmt.ws_host,
+			ws_port: planAQmt.ws_port,
+			...(isQmtCiccBroker ? { filter_bj: true } : {}),
+		})
+		setPlanXConfig(values)
 		setRealMarketConfig((prev) => ({
 			...prev,
-			...values,
+			qmt_mode: "planX",
 			...(isQmtCiccBroker ? { filter_bj: "1" } : {}),
 		}))
 	}
@@ -291,12 +384,17 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 		options: { redirectOnFailure?: boolean } = {},
 	) => {
 		const { redirectOnFailure = false } = options
-		const isValid = await qmtForm.trigger()
+		const isValid = isPlanA
+			? await planAForm.trigger()
+			: await planXForm.trigger()
 		if (!isValid) {
 			toast.error(redirectOnFailure ? "请先完善 QMT 配置" : "QMT 配置不合法")
+			const errors = isPlanA
+				? planAForm.formState.errors
+				: planXForm.formState.errors
 			await rendererLog(
 				"error",
-				`QMT 配置表单数据不合法: ${JSON.stringify(qmtForm.formState.errors)}`,
+				`QMT 配置表单数据不合法: ${JSON.stringify(errors)}`,
 			)
 			if (redirectOnFailure) onGoToQmt?.()
 			return false
@@ -353,7 +451,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 	}
 
 	const checkPlanAQmtConnectivityAfterSave = async () => {
-		if (qmtForm.getValues("qmt_mode") !== "planA") return true
+		if (planAForm.getValues("qmt_mode") !== "planA") return true
 
 		try {
 			const res = await checkStartupQmtConnect()
@@ -387,7 +485,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 	}
 
 	const handleFolderSelect = useDebounceFn(
-		async () => {
+		async (field: "qmt_path" | "exported_dir", target: "planA" | "planX") => {
 			if (choosing) return
 
 			setChoosing(true)
@@ -395,7 +493,11 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 				const res = (await selectDirectory()) as string
 
 				if (res) {
-					qmtForm.setValue("qmt_path", res, { shouldValidate: true })
+					if (target === "planA") {
+						planAForm.setValue("qmt_path", res, { shouldValidate: true })
+					} else {
+						planXForm.setValue(field, res, { shouldValidate: true })
+					}
 				}
 			} finally {
 				setChoosing(false)
@@ -407,7 +509,8 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 	// biome-ignore lint/correctness/useExhaustiveDependencies:
 	useEffect(() => {
 		form.reset(defaultValues)
-		qmtForm.reset(qmtDefaultValues)
+		planAForm.reset(planADefaultValues)
+		planXForm.reset(planXDefaultValues)
 	}, [])
 
 	const renderFormActions = ({
@@ -931,13 +1034,13 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 					})}
 				</TabsContent>
 			</Form>
-			<Form {...qmtForm}>
-				<TabsContent value="qmt" className="mt-4 space-y-4">
-					<form className="w-full space-y-4 flex flex-col gap-4">
+			<TabsContent value="qmt" className="mt-4 space-y-4">
+				<Form {...planAForm}>
+					<div className="w-full space-y-4 flex flex-col gap-4">
 						<div className="grid grid-cols-2 gap-4 gap-y-6">
 							<FormField
 								name="qmt_mode"
-								control={qmtForm.control}
+								control={planAForm.control}
 								render={({ field }) => (
 									<FormItem className="col-span-2">
 										<FormLabel className="!mt-0 flex items-center gap-1">
@@ -947,8 +1050,8 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 												content={
 													<div className="space-y-1.5">
 														<p>
-															1. 大QMT（默认）：基于论坛 websocket
-															方案，提供的【大QMT版】交易模式。
+															1. Plan X（默认）：需配置账户号、QMT
+															安装路径与导出路径。
 														</p>
 														<p>
 															2. 券商特邀：部分券商提供的 QMT 特邀通道，需配置
@@ -966,9 +1069,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 										<FormControl>
 											<RadioGroup
 												disabled={!user?.isMember}
-												value={
-													field.value === "planA" ? "planA" : "planX"
-												}
+												value={field.value === "planA" ? "planA" : "planX"}
 												onValueChange={(value) => {
 													if (value === "planA") {
 														setPlanAConfirmOpen(true)
@@ -1006,52 +1107,129 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 							/>
 
 							{isPlanA && (
-								<FormField
-									name="qmt_path"
-									control={qmtForm.control}
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel className="flex items-center gap-2 flex-wrap">
-												<span>大QMT 安装路径</span>
-												<span className="text-destructive">*</span>
-												<Badge className="font-semibold">
-													{"<QMT 路径>/userdata"}
-												</Badge>
-											</FormLabel>
-											<div className="flex w-full gap-2">
-												<FormControl className="flex-grow">
+								<>
+									<FormField
+										name="qmt_path"
+										control={planAForm.control}
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel className="flex items-center gap-2 flex-wrap">
+													<span>大QMT 安装路径</span>
+													<span className="text-destructive">*</span>
+													<Badge className="font-semibold">
+														{"<QMT 路径>/userdata"}
+													</Badge>
+												</FormLabel>
+												<div className="flex w-full gap-2">
+													<FormControl className="flex-grow">
+														<Input
+															{...field}
+															readOnly
+															disabled={!user?.isMember}
+															onClick={() =>
+																handleFolderSelect.run("qmt_path", "planA")
+															}
+															placeholder="<QMT 路径>/userdata"
+														/>
+													</FormControl>
+													<Button
+														size="sm"
+														variant="outline"
+														disabled={!user?.isMember}
+														onClick={(e) => {
+															e.preventDefault()
+															handleFolderSelect.run("qmt_path", "planA")
+														}}
+													>
+														<Folder className="mr-2 h-4 w-4" />
+														<span>选择文件夹</span>
+													</Button>
+												</div>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+
+									<FormField
+										name="account_id"
+										control={planAForm.control}
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>
+													大QMT 账户号{" "}
+													<span className="text-destructive">*</span>{" "}
+													<span className="text-xs text-muted-foreground">
+														大QMT账号，不清楚可以询问客户经理
+													</span>
+												</FormLabel>
+												<FormControl>
 													<Input
 														{...field}
-														readOnly
 														disabled={!user?.isMember}
-														onClick={() => handleFolderSelect.run()}
-														placeholder="<QMT 路径>/userdata"
+														className="w-full"
+														placeholder="请填写 qmt 账户号..."
 													/>
 												</FormControl>
-												<Button
-													size="sm"
-													variant="outline"
-													disabled={!user?.isMember}
-													onClick={(e) => {
-														e.preventDefault()
-														handleFolderSelect.run()
-													}}
-												>
-													<Folder className="mr-2 h-4 w-4" />
-													<span>选择文件夹</span>
-												</Button>
-											</div>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							)}
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
 
+									<div className="relative col-span-2 overflow-hidden rounded-xl border border-amber-200/90 bg-amber-50/70 py-3.5 pr-4 pl-5 dark:border-amber-900/70 dark:bg-amber-950/20">
+										<div className="absolute inset-y-0 left-0 w-1 bg-amber-400 dark:bg-amber-500/80" />
+										<div className="flex items-start gap-3">
+											<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/90 shadow-sm ring-1 ring-amber-200 dark:bg-amber-900/40 dark:ring-amber-800">
+												<TriangleAlert className="size-4 text-amber-500 dark:text-amber-400" />
+											</div>
+											<div className="min-w-0 space-y-0.5">
+												<p className="text-sm font-semibold text-amber-950 dark:text-amber-100">
+													保存后将自动检测 QMT 连通性
+												</p>
+												<p className="text-[13px] leading-5 text-amber-800/90 dark:text-amber-200/80">
+													若连接失败，会导致
+													<span className="font-bold text-amber-950 dark:text-amber-50">
+														无法交易
+													</span>
+													，请排查连通问题后再次保存。
+												</p>
+											</div>
+										</div>
+									</div>
+
+									<FormField
+										name="qmt_port"
+										control={planAForm.control}
+										render={({ field }) => (
+											<FormItem className="hidden">
+												<FormLabel>
+													QMT 端口号 <span className="text-destructive">*</span>
+												</FormLabel>
+												<FormControl>
+													<Input
+														{...field}
+														disabled
+														className="w-full"
+														placeholder="请填写 qmt 端口号..."
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								</>
+							)}
+						</div>
+					</div>
+				</Form>
+
+				{!isPlanA && (
+					<Form {...planXForm}>
+						<div className="grid grid-cols-2 items-start gap-4 gap-y-6">
 							<FormField
 								name="account_id"
-								control={qmtForm.control}
+								control={planXForm.control}
 								render={({ field }) => (
-									<FormItem>
+									<FormItem className="col-span-2">
 										<FormLabel>
 											大QMT 账户号 <span className="text-destructive">*</span>{" "}
 											<span className="text-xs text-muted-foreground">
@@ -1071,100 +1249,97 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 								)}
 							/>
 
-							{isPlanA && (
-								<div className="relative col-span-2 overflow-hidden rounded-xl border border-amber-200/90 bg-amber-50/70 py-3.5 pr-4 pl-5 dark:border-amber-900/70 dark:bg-amber-950/20">
-									<div className="absolute inset-y-0 left-0 w-1 bg-amber-400 dark:bg-amber-500/80" />
-									<div className="flex items-start gap-3">
-										<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/90 shadow-sm ring-1 ring-amber-200 dark:bg-amber-900/40 dark:ring-amber-800">
-											<TriangleAlert className="size-4 text-amber-500 dark:text-amber-400" />
+							<FormField
+								name="qmt_path"
+								control={planXForm.control}
+								render={({ field }) => (
+									<FormItem className="flex flex-col">
+										<FormLabel className="flex min-h-5 flex-wrap items-center gap-2">
+											<span>大QMT 安装路径</span>
+											<span className="text-destructive">*</span>
+											<Badge className="font-semibold">
+												{"<QMT 路径>/userdata"}
+											</Badge>
+										</FormLabel>
+										<div className="flex w-full items-center gap-2">
+											<FormControl className="flex-grow">
+												<Input
+													{...field}
+													readOnly
+													disabled={!user?.isMember}
+													onClick={() =>
+														handleFolderSelect.run("qmt_path", "planX")
+													}
+													placeholder="<QMT 路径>/userdata"
+												/>
+											</FormControl>
+											<Button
+												size="sm"
+												variant="outline"
+												className="shrink-0"
+												disabled={!user?.isMember}
+												onClick={(e) => {
+													e.preventDefault()
+													handleFolderSelect.run("qmt_path", "planX")
+												}}
+											>
+												<Folder className="mr-2 h-4 w-4" />
+												<span>选择文件夹</span>
+											</Button>
 										</div>
-										<div className="min-w-0 space-y-0.5">
-											<p className="text-sm font-semibold text-amber-950 dark:text-amber-100">
-												保存后将自动检测 QMT 连通性
-											</p>
-											<p className="text-[13px] leading-5 text-amber-800/90 dark:text-amber-200/80">
-												若连接失败，会导致
-												<span className="font-bold text-amber-950 dark:text-amber-50">
-													无法交易
-												</span>
-												，请排查连通问题后再次保存。
-											</p>
-										</div>
-									</div>
-								</div>
-							)}
-
-							{!isPlanA && (
-								<>
-									<FormField
-										name="ws_host"
-										control={qmtForm.control}
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>websocket主机地址</FormLabel>
-												<FormControl>
-													<Input
-														{...field}
-														disabled={!user?.isMember}
-														className="w-full"
-														placeholder="127.0.0.1"
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-
-									<FormField
-										name="ws_port"
-										control={qmtForm.control}
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>websocket端口号</FormLabel>
-												<FormControl>
-													<Input
-														{...field}
-														disabled={!user?.isMember}
-														className="w-full"
-														placeholder="16666"
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-								</>
-							)}
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 
 							<FormField
-								name="qmt_port"
-								control={qmtForm.control}
+								name="exported_dir"
+								control={planXForm.control}
 								render={({ field }) => (
-									<FormItem className="hidden">
-										<FormLabel>
-											QMT 端口号 <span className="text-destructive">*</span>
+									<FormItem className="flex flex-col">
+										<FormLabel className="min-h-5">
+											大QMT 导出路径 <span className="text-destructive">*</span>
 										</FormLabel>
-										<FormControl>
-											<Input
-												{...field}
-												disabled
-												className="w-full"
-												placeholder="请填写 qmt 端口号..."
-											/>
-										</FormControl>
+										<div className="flex w-full items-center gap-2">
+											<FormControl className="flex-grow">
+												<Input
+													{...field}
+													readOnly
+													disabled={!user?.isMember}
+													onClick={() =>
+														handleFolderSelect.run("exported_dir", "planX")
+													}
+													placeholder="请选择 QMT 导出数据路径"
+												/>
+											</FormControl>
+											<Button
+												size="sm"
+												variant="outline"
+												className="shrink-0"
+												disabled={!user?.isMember}
+												onClick={(e) => {
+													e.preventDefault()
+													handleFolderSelect.run("exported_dir", "planX")
+												}}
+											>
+												<Folder className="mr-2 h-4 w-4" />
+												<span>选择文件夹</span>
+											</Button>
+										</div>
 										<FormMessage />
 									</FormItem>
 								)}
 							/>
 						</div>
-					</form>
-					{renderFormActions({
-						saveLabel: "保存 QMT 配置",
-						onSave: handleSaveQmt,
-						needCiccNotice: isQmtCiccBroker,
-					})}
-				</TabsContent>
-			</Form>
+					</Form>
+				)}
+
+				{renderFormActions({
+					saveLabel: "保存 QMT 配置",
+					onSave: handleSaveQmt,
+					needCiccNotice: isQmtCiccBroker,
+				})}
+			</TabsContent>
 			<ClearFactorCacheConfirmDialog
 				open={factorCacheConfirmOpen}
 				onOpenChange={setFactorCacheConfirmOpen}
@@ -1191,7 +1366,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 				open={planAConfirmOpen}
 				onOpenChange={setPlanAConfirmOpen}
 				onConfirm={() => {
-					qmtForm.setValue("qmt_mode", "planA")
+					planAForm.setValue("qmt_mode", "planA")
 					setPlanAConfirmOpen(false)
 				}}
 			/>

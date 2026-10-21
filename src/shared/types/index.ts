@@ -51,3 +51,8 @@ export type {
 
 // 客户端通知中心
 export type { ClientNotification } from "./client-notification.js"
+
+export type {
+	AccountsConfigMap,
+	QmtAccountConfig,
+} from "./qmt-accounts.js"

@@ -16,8 +16,10 @@ import {
 import {
 	fusionAtom,
 	libraryTypeAtom,
+	planXConfigAtom,
 	selectStgListAtom,
 } from "@/renderer/store/storage"
+import type { AccountsConfigMap } from "@/shared/types/qmt-accounts"
 import type {
 	PosStrategyType,
 	SelectStgType,
@@ -35,6 +37,7 @@ export const useToggleAutoRealTrading = () => {
 	const selectStgList = useAtomValue(selectStgListAtom) // -- 获取选择的策略
 	const libraryType = useAtomValue(libraryTypeAtom)
 	const fusion = useAtomValue(fusionAtom)
+	const planXConfig = useAtomValue(planXConfigAtom)
 
 	const { setAutoTrading, getStoreValue, setStoreValue, killRocket } =
 		window.electronAPI
@@ -78,19 +81,41 @@ export const useToggleAutoRealTrading = () => {
 				const realMarketConfig = (await getStoreValue(
 					"real_market_config",
 				)) as Record<string, any>
+				const qmtMode =
+					realMarketConfig?.qmt_mode === "planA" ? "planA" : "planX"
+				const sharedKeys = [
+					"qmt_port",
+					"filter_cyb",
+					"filter_kcb",
+					"filter_bj",
+				]
+				const hasSharedKeys = sharedKeys.every((k) =>
+					Object.keys(realMarketConfig ?? {}).includes(k),
+				)
 
-				if (
-					![
-						"qmt_path",
-						"qmt_port",
-						"account_id",
-						"filter_cyb",
-						"filter_kcb",
-						"filter_bj",
-					].every((k) => Object.keys(realMarketConfig).includes(k))
-				) {
-					showToast && toast.warning("请在实盘配置中完善 QMT 配置")
-					return
+				if (qmtMode === "planA") {
+					if (
+						!["qmt_path", "account_id", ...sharedKeys].every((k) =>
+							Object.keys(realMarketConfig ?? {}).includes(k),
+						)
+					) {
+						showToast && toast.warning("请在实盘配置中完善 QMT 配置")
+						return
+					}
+				} else {
+					const accountId = planXConfig.account_id?.trim()
+					const accounts = ((await getStoreValue("accounts", {})) ??
+						{}) as AccountsConfigMap
+					const entry = accountId ? accounts[accountId] : undefined
+					if (
+						!hasSharedKeys ||
+						!accountId ||
+						!entry?.qmt_path?.trim() ||
+						!entry?.exported_dir?.trim()
+					) {
+						showToast && toast.warning("请在实盘配置中完善 QMT 配置")
+						return
+					}
 				}
 			}
 
@@ -115,7 +140,7 @@ export const useToggleAutoRealTrading = () => {
 
 			return true
 		},
-		[isUpdating, isMinDataUpdating],
+		[isUpdating, isMinDataUpdating, planXConfig.account_id],
 	)
 
 	return {

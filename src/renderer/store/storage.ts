@@ -169,6 +169,21 @@ export const realMarketConfigSchemaAtom = atomWithStorage<
 	{ getOnInit: true },
 )
 
+export const planXConfigAtom = atomWithStorage<{
+	account_id: string
+	qmt_path: string
+	exported_dir: string
+}>(
+	"planXConfig",
+	{
+		account_id: "",
+		qmt_path: "",
+		exported_dir: "",
+	},
+	undefined,
+	{ getOnInit: true },
+)
+
 export const showMoneyAtom = atomWithStorage<boolean>(
 	"showMoney",
 	true,

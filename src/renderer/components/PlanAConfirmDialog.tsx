@@ -96,7 +96,7 @@ export function PlanAConfirmDialog({
 					<div
 						ref={scrollRef}
 						onScroll={updateScrollState}
-						className="h-[360px] overflow-y-scroll rounded-lg border bg-muted/30 px-4 py-3 shadow-inner"
+						className="h-[320px] overflow-y-auto rounded-lg border bg-muted/30 px-4 py-3 shadow-inner"
 					>
 						<PlanAAgreementContent />
 					</div>

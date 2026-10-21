@@ -9,7 +9,10 @@
  */
 
 import { isMinDataUpdatingAtom, minDataModeAtom } from "@/renderer/store"
-import { realMarketConfigSchemaAtom } from "@/renderer/store/storage"
+import {
+	planXConfigAtom,
+	realMarketConfigSchemaAtom,
+} from "@/renderer/store/storage"
 import { useAtomValue, useSetAtom } from "jotai"
 import { useCallback, useMemo } from "react"
 import { toast } from "sonner"
@@ -19,19 +22,38 @@ const { toggleMinDataSchedule } = window.electronAPI
 export function useMinDataSchedule() {
 	const mode = useAtomValue(minDataModeAtom)
 	const realMarketConfig = useAtomValue(realMarketConfigSchemaAtom)
+	const planXConfig = useAtomValue(planXConfigAtom)
 	const setIsMinDataUpdating = useSetAtom(isMinDataUpdatingAtom)
 
-	const isQmtConfigured = useMemo(
-		() =>
-			!!realMarketConfig?.account_id?.trim() &&
-			!!realMarketConfig?.qmt_path?.trim(),
-		[realMarketConfig?.account_id, realMarketConfig?.qmt_path],
-	)
+	const isQmtConfigured = useMemo(() => {
+		if (realMarketConfig?.qmt_mode === "planA") {
+			return (
+				!!realMarketConfig?.account_id?.trim() &&
+				!!realMarketConfig?.qmt_path?.trim()
+			)
+		}
+		return (
+			!!planXConfig.account_id?.trim() &&
+			!!planXConfig.qmt_path?.trim() &&
+			!!planXConfig.exported_dir?.trim()
+		)
+	}, [
+		realMarketConfig?.account_id,
+		realMarketConfig?.qmt_path,
+		realMarketConfig?.qmt_mode,
+		planXConfig.account_id,
+		planXConfig.qmt_path,
+		planXConfig.exported_dir,
+	])
 
 	const startMinDataSchedule = useCallback(
 		async (showToast = true) => {
 			if (!isQmtConfigured) {
-				toast.warning("QMT 未配置，请先在实盘配置中填写 QMT 账户号和安装路径")
+				toast.warning(
+					realMarketConfig?.qmt_mode === "planA"
+						? "QMT 未配置，请先在实盘配置中填写 QMT 账户号和安装路径"
+						: "QMT 未配置，请先在实盘配置中填写账户号、安装路径和导出路径",
+				)
 				return false
 			}
 
@@ -43,7 +65,7 @@ export function useMinDataSchedule() {
 			}
 			return true
 		},
-		[isQmtConfigured, mode, setIsMinDataUpdating],
+		[isQmtConfigured, mode, setIsMinDataUpdating, realMarketConfig?.qmt_mode],
 	)
 
 	const stopMinDataSchedule = useCallback(async () => {
