@@ -152,6 +152,7 @@ export const useLifeCycle = () => {
 					account_id: accountId,
 					qmt_path: accountCfg?.qmt_path ?? prev.qmt_path ?? "",
 					exported_dir: accountCfg?.exported_dir ?? prev.exported_dir ?? "",
+					copy_paste_optimize: accountCfg?.copy_paste_optimize ?? false,
 				}
 			})
 		}

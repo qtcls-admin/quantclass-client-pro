@@ -11,6 +11,7 @@
 export interface QmtAccountConfig {
 	qmt_path: string
 	exported_dir: string
+	copy_paste_optimize: boolean
 }
 
 export type AccountsConfigMap = Record<string, QmtAccountConfig>

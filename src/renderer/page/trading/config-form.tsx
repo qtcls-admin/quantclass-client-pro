@@ -26,10 +26,12 @@ import {
 	FormMessage,
 } from "@/renderer/components/ui/form"
 import { Input } from "@/renderer/components/ui/input"
+import { Label } from "@/renderer/components/ui/label"
 import {
 	RadioGroup,
 	RadioGroupItem,
 } from "@/renderer/components/ui/radio-group"
+import { Switch } from "@/renderer/components/ui/switch"
 import { TabsContent } from "@/renderer/components/ui/tabs"
 // import { ScrollArea } from "@/renderer/components/ui/scroll-area"
 import { usePermissionCheck, useToggleAutoRealTrading } from "@/renderer/hooks"
@@ -86,6 +88,7 @@ const PlanXConfigFieldsSchema = z.object({
 	account_id: z.string().min(1, { message: "账户号未填写" }),
 	qmt_path: z.string(),
 	exported_dir: z.string(),
+	copy_paste_optimize: z.boolean(),
 })
 
 function refineQmtPathRequired(
@@ -184,7 +187,7 @@ interface TradingConfigFormProps {
 export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 	const { selectDirectory, createRealTradingDir, clearFactorCache } =
 		window.electronAPI
-	const { user } = useAtomValue(userAtom)
+	const { user, isMember } = useAtomValue(userAtom)
 	const { data: rocketStatus = false } = useAtomValue(rocketStatusQueryAtom)
 	const { checkWithToast } = usePermissionCheck()
 	const [choosing, setChoosing] = useState(false)
@@ -241,6 +244,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 			account_id: planXConfig.account_id ?? "",
 			qmt_path: planXConfig.qmt_path ?? "",
 			exported_dir: planXConfig.exported_dir ?? "",
+			copy_paste_optimize: planXConfig.copy_paste_optimize ?? false,
 		}),
 		[planXConfig],
 	)
@@ -270,7 +274,6 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 	const activeAccountId = isPlanA ? planAAccountId : planXAccountId
 	const isQmtCiccBroker =
 		getBrokerNameByAccountId(activeAccountId ?? "") === "中金"
-
 	useEffect(() => {
 		if (isPlanA) return
 
@@ -278,6 +281,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 		if (!id) {
 			planXForm.setValue("qmt_path", "")
 			planXForm.setValue("exported_dir", "")
+			planXForm.setValue("copy_paste_optimize", false)
 			return
 		}
 
@@ -286,6 +290,10 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 			const entry = accounts[id]
 			planXForm.setValue("qmt_path", entry?.qmt_path ?? "")
 			planXForm.setValue("exported_dir", entry?.exported_dir ?? "")
+			planXForm.setValue(
+				"copy_paste_optimize",
+				entry?.copy_paste_optimize ?? false,
+			)
 		})
 	}, [isPlanA, planXAccountId, planXForm])
 
@@ -356,12 +364,14 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 		const id = values.account_id.trim()
 		const accounts = ((await getStoreValue("accounts", {})) ??
 			{}) as AccountsConfigMap
+		const accountEntry: AccountsConfigMap[string] = {
+			qmt_path: values.qmt_path,
+			exported_dir: values.exported_dir,
+			copy_paste_optimize: values.copy_paste_optimize,
+		}
 		await setStoreValue("accounts", {
 			...accounts,
-			[id]: {
-				qmt_path: values.qmt_path,
-				exported_dir: values.exported_dir,
-			},
+			[id]: accountEntry,
 		})
 		const planAQmt = planAForm.getValues()
 		await setStoreValue("real_market_config", {
@@ -1038,73 +1048,75 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 				<Form {...planAForm}>
 					<div className="w-full space-y-4 flex flex-col gap-4">
 						<div className="grid grid-cols-2 gap-4 gap-y-6">
-							<FormField
-								name="qmt_mode"
-								control={planAForm.control}
-								render={({ field }) => (
-									<FormItem className="col-span-2">
-										<FormLabel className="!mt-0 flex items-center gap-1">
-											<span className="font-semibold">交易模式切换</span>{" "}
-											<span className="text-destructive">*</span>
-											<ButtonTooltip
-												content={
-													<div className="space-y-1.5">
-														<p>
-															1. Plan X（默认）：需配置账户号、QMT
-															安装路径与导出路径。
-														</p>
-														<p>
-															2. 券商特邀：部分券商提供的 QMT 特邀通道，需配置
-															QMT 安装路径。
-														</p>
-													</div>
-												}
-											>
-												<CircleHelp
-													className="h-4 w-4 text-muted-foreground hover:cursor-pointer"
-													onClick={(e) => e.stopPropagation()}
-												/>
-											</ButtonTooltip>
-										</FormLabel>
-										<FormControl>
-											<RadioGroup
-												disabled={!user?.isMember}
-												value={field.value === "planA" ? "planA" : "planX"}
-												onValueChange={(value) => {
-													if (value === "planA") {
-														setPlanAConfirmOpen(true)
-														return
+							{isMember && (
+								<FormField
+									name="qmt_mode"
+									control={planAForm.control}
+									render={({ field }) => (
+										<FormItem className="col-span-2">
+											<FormLabel className="!mt-0 flex items-center gap-1">
+												<span className="font-semibold">交易模式切换</span>{" "}
+												<span className="text-destructive">*</span>
+												<ButtonTooltip
+													content={
+														<div className="space-y-1.5">
+															<p>
+																1. Plan X（默认）：需配置账户号、QMT
+																安装路径与导出路径。
+															</p>
+															<p>
+																2. 券商特邀：部分券商提供的 QMT 特邀通道，需配置
+																QMT 安装路径。
+															</p>
+														</div>
 													}
-													field.onChange(value)
-												}}
-												className="flex space-x-4"
-											>
-												<FormItem className="flex items-center space-x-1 space-y-0">
-													<FormControl>
-														<RadioGroupItem value="planX" />
-													</FormControl>
-													<FormLabel
-														className={`${field.value !== "planA" ? "font-bold" : "font-normal"}`}
-													>
-														Plan X（默认模式）
-													</FormLabel>
-												</FormItem>
-												<FormItem className="flex items-center space-x-1 space-y-0">
-													<FormControl>
-														<RadioGroupItem value="planA" />
-													</FormControl>
-													<FormLabel
-														className={`${field.value === "planA" ? "font-bold" : "font-normal"}`}
-													>
-														券商特邀
-													</FormLabel>
-												</FormItem>
-											</RadioGroup>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+												>
+													<CircleHelp
+														className="h-4 w-4 text-muted-foreground hover:cursor-pointer"
+														onClick={(e) => e.stopPropagation()}
+													/>
+												</ButtonTooltip>
+											</FormLabel>
+											<FormControl>
+												<RadioGroup
+													disabled={!user?.isMember}
+													value={field.value === "planA" ? "planA" : "planX"}
+													onValueChange={(value) => {
+														if (value === "planA") {
+															setPlanAConfirmOpen(true)
+															return
+														}
+														field.onChange(value)
+													}}
+													className="flex space-x-4"
+												>
+													<FormItem className="flex items-center space-x-1 space-y-0">
+														<FormControl>
+															<RadioGroupItem value="planX" />
+														</FormControl>
+														<FormLabel
+															className={`${field.value !== "planA" ? "font-bold" : "font-normal"}`}
+														>
+															默认模式
+														</FormLabel>
+													</FormItem>
+													<FormItem className="flex items-center space-x-1 space-y-0">
+														<FormControl>
+															<RadioGroupItem value="planA" />
+														</FormControl>
+														<FormLabel
+															className={`${field.value === "planA" ? "font-bold" : "font-normal"}`}
+														>
+															券商特邀
+														</FormLabel>
+													</FormItem>
+												</RadioGroup>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							)}
 
 							{isPlanA && (
 								<>
@@ -1114,10 +1126,10 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 										render={({ field }) => (
 											<FormItem>
 												<FormLabel className="flex items-center gap-2 flex-wrap">
-													<span>大QMT 安装路径</span>
+													<span>券商QMT 安装路径</span>
 													<span className="text-destructive">*</span>
 													<Badge className="font-semibold">
-														{"<QMT 路径>/userdata"}
+														{"<QMT 路径>"}
 													</Badge>
 												</FormLabel>
 												<div className="flex w-full gap-2">
@@ -1129,7 +1141,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 															onClick={() =>
 																handleFolderSelect.run("qmt_path", "planA")
 															}
-															placeholder="<QMT 路径>/userdata"
+															placeholder="<QMT 路径>"
 														/>
 													</FormControl>
 													<Button
@@ -1156,10 +1168,9 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 										render={({ field }) => (
 											<FormItem>
 												<FormLabel>
-													大QMT 账户号{" "}
-													<span className="text-destructive">*</span>{" "}
+													资金账户 <span className="text-destructive">*</span>{" "}
 													<span className="text-xs text-muted-foreground">
-														大QMT账号，不清楚可以询问客户经理
+														资金账户，不清楚可以询问客户经理
 													</span>
 												</FormLabel>
 												<FormControl>
@@ -1167,7 +1178,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 														{...field}
 														disabled={!user?.isMember}
 														className="w-full"
-														placeholder="请填写 qmt 账户号..."
+														placeholder="请填写资金账户号..."
 													/>
 												</FormControl>
 												<FormMessage />
@@ -1231,9 +1242,9 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 								render={({ field }) => (
 									<FormItem className="col-span-2">
 										<FormLabel>
-											大QMT 账户号 <span className="text-destructive">*</span>{" "}
+											资金账户 <span className="text-destructive">*</span>{" "}
 											<span className="text-xs text-muted-foreground">
-												大QMT账号，不清楚可以询问客户经理
+												资金账户，不清楚可以询问客户经理
 											</span>
 										</FormLabel>
 										<FormControl>
@@ -1241,7 +1252,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 												{...field}
 												disabled={!user?.isMember}
 												className="w-full"
-												placeholder="请填写 qmt 账户号..."
+												placeholder="请填写资金账户号..."
 											/>
 										</FormControl>
 										<FormMessage />
@@ -1255,11 +1266,9 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 								render={({ field }) => (
 									<FormItem className="flex flex-col">
 										<FormLabel className="flex min-h-5 flex-wrap items-center gap-2">
-											<span>大QMT 安装路径</span>
+											<span>券商QMT 安装路径</span>
 											<span className="text-destructive">*</span>
-											<Badge className="font-semibold">
-												{"<QMT 路径>/userdata"}
-											</Badge>
+											<Badge className="font-semibold">{"<QMT 路径>"}</Badge>
 										</FormLabel>
 										<div className="flex w-full items-center gap-2">
 											<FormControl className="flex-grow">
@@ -1270,7 +1279,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 													onClick={() =>
 														handleFolderSelect.run("qmt_path", "planX")
 													}
-													placeholder="<QMT 路径>/userdata"
+													placeholder="<QMT 路径>"
 												/>
 											</FormControl>
 											<Button
@@ -1298,7 +1307,11 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 								render={({ field }) => (
 									<FormItem className="flex flex-col">
 										<FormLabel className="min-h-5">
-											大QMT 导出路径 <span className="text-destructive">*</span>
+											QMT 数据导出路径{" "}
+											<span className="text-destructive">*</span>{" "}
+											<span className="text-xs text-muted-foreground">
+												QMT 数据导出路径，不清楚可以询问客户经理
+											</span>
 										</FormLabel>
 										<div className="flex w-full items-center gap-2">
 											<FormControl className="flex-grow">
@@ -1330,6 +1343,75 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 									</FormItem>
 								)}
 							/>
+
+							{isMember && (
+								<FormField
+									name="copy_paste_optimize"
+									control={planXForm.control}
+									render={({ field }) => (
+										<FormItem className="col-span-2">
+											<div className="flex items-start justify-between gap-4 rounded-lg border bg-muted/20 px-4 py-3">
+												<div className="min-w-0 space-y-1">
+													<div className="flex items-center gap-1">
+														<Label
+															htmlFor="copy-paste-optimize"
+															className="text-sm font-semibold"
+														>
+															复制粘贴优化
+														</Label>
+														<ButtonTooltip
+															content={
+																<div className="max-w-xs space-y-1.5">
+																	<p>
+																		关闭：需将选股内核生成的 QMT 策略手动复制到
+																		QMT 客户端中运行。
+																	</p>
+																	<p>开启：无需手动复制策略。</p>
+																</div>
+															}
+														>
+															<CircleHelp className="h-4 w-4 text-muted-foreground hover:cursor-pointer" />
+														</ButtonTooltip>
+													</div>
+													<p className="text-xs leading-relaxed text-muted-foreground">
+														{field.value
+															? "已开启：无需手动将选股内核生成的 QMT 策略复制到 QMT 客户端。"
+															: "已关闭：需将选股内核生成的 QMT 策略手动复制到 QMT 客户端中运行。"}
+													</p>
+												</div>
+												<Switch
+													id="copy-paste-optimize"
+													checked={field.value}
+													disabled={!user?.isMember}
+													onCheckedChange={field.onChange}
+												/>
+											</div>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							)}
+
+							<div className="relative col-span-2 overflow-hidden rounded-xl border border-amber-200/90 bg-amber-50/70 py-3.5 pr-4 pl-5 dark:border-amber-900/70 dark:bg-amber-950/20">
+								<div className="absolute inset-y-0 left-0 w-1 bg-amber-400 dark:bg-amber-500/80" />
+								<div className="flex items-start gap-3">
+									<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/90 shadow-sm ring-1 ring-amber-200 dark:bg-amber-900/40 dark:ring-amber-800">
+										<TriangleAlert className="size-4 text-amber-500 dark:text-amber-400" />
+									</div>
+									<div className="min-w-0 space-y-0.5">
+										<p className="text-sm font-semibold text-amber-950 dark:text-amber-100">
+											请确保 QMT 数据导出路径不为空
+										</p>
+										<p className="text-[13px] leading-5 text-amber-800/90 dark:text-amber-200/80">
+											该文件夹需保存导出的 QMT 数据，若路径为空将导致
+											<span className="font-bold text-amber-950 dark:text-amber-50">
+												无法正常交易
+											</span>
+											，请确认无误后再保存。
+										</p>
+									</div>
+								</div>
+							</div>
 						</div>
 					</Form>
 				)}

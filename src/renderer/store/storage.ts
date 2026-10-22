@@ -173,12 +173,14 @@ export const planXConfigAtom = atomWithStorage<{
 	account_id: string
 	qmt_path: string
 	exported_dir: string
+	copy_paste_optimize: boolean
 }>(
 	"planXConfig",
 	{
 		account_id: "",
 		qmt_path: "",
 		exported_dir: "",
+		copy_paste_optimize: false,
 	},
 	undefined,
 	{ getOnInit: true },
