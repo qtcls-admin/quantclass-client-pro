@@ -15,6 +15,7 @@
 // 	TRADING_SECTION_ROUTE,
 // } from "@/renderer/constant"
 import { useAppVersions } from "@/renderer/hooks/useAppVersion"
+import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 // import { useProductList } from "@/renderer/hooks/useProductList"
 import { useTradingSession } from "@/renderer/hooks/useTradingSession"
 import { useVersionCheck } from "@/renderer/hooks/useVersionCheck"
@@ -72,6 +73,7 @@ function getSystemKernelVersionUpdateLevel(
 				rocketVersion?: string
 		  }
 		| undefined,
+	rocketVisible: boolean,
 ): KernelVersionUpdateLevel {
 	const levels: KernelVersionUpdateLevel[] = [
 		getKernelVersionUpdateLevel(
@@ -86,13 +88,15 @@ function getSystemKernelVersionUpdateLevel(
 		),
 	]
 
-	levels.push(
-		getKernelVersionUpdateLevel(
-			localVersions?.rocketVersion,
-			appVersions?.latest?.rocket,
-			appVersions?.rocket ?? [],
-		),
-	)
+	if (rocketVisible) {
+		levels.push(
+			getKernelVersionUpdateLevel(
+				localVersions?.rocketVersion,
+				appVersions?.latest?.rocket,
+				appVersions?.rocket ?? [],
+			),
+		)
+	}
 
 	return mergeKernelVersionUpdateLevels(levels)
 }
@@ -148,14 +152,20 @@ export function MonitorStrip() {
 	// const setActiveTab = useSetAtom(activeTabAtom)
 	const { appVersions } = useAppVersions()
 	const { hasClientUpdate } = useVersionCheck()
+	const rocketVisible = useRocketVisible()
 	const localVersions = useAtomValue(versionsAtom)
 	const [clock, setClock] = useState(() => dayjs().format("HH:mm:ss"))
 	// const { productList } = useProductList()
 	const tradingSession = useTradingSession()
 
 	const systemKernelLevel = useMemo(
-		() => getSystemKernelVersionUpdateLevel(appVersions, localVersions),
-		[appVersions, localVersions],
+		() =>
+			getSystemKernelVersionUpdateLevel(
+				appVersions,
+				localVersions,
+				rocketVisible,
+			),
+		[appVersions, localVersions, rocketVisible],
 	)
 
 	const systemLevel = useMemo(() => {

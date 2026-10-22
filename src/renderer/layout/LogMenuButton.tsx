@@ -21,6 +21,7 @@ import {
 import { isWindows } from "@/renderer/constant"
 import { useHotkeys } from "@/renderer/hooks/useHotkeys"
 import { useRealMarketConfig } from "@/renderer/hooks/useRealMarketConfig"
+import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 import { isLogModalOpenAtom, isShowMonitorPanelAtom } from "@/renderer/store"
 import { planXConfigAtom } from "@/renderer/store/storage"
 import { useAtom, useAtomValue } from "jotai"
@@ -40,6 +41,7 @@ const { openUserDirectory, openDataDirectory, openDirectory } =
 
 export function LogMenuButton() {
 	const { realMarketConfig } = useRealMarketConfig()
+	const rocketVisible = useRocketVisible()
 	const planXConfig = useAtomValue(planXConfigAtom)
 	const qmtFolderPath =
 		realMarketConfig.qmt_mode === "planA"
@@ -92,17 +94,19 @@ export function LogMenuButton() {
 							QMT文件夹
 						</DropdownMenuItem>
 					)}
-					<DropdownMenuItem
-						onClick={() =>
-							openDataDirectory(["real_trading", "rocket", "data", "系统日志"])
-						}
-					>
-						<Blocks />
-						下单日志
-						<Badge className="ml-auto font-mono" variant="secondary">
-							rocket
-						</Badge>
-					</DropdownMenuItem>
+					{rocketVisible && (
+						<DropdownMenuItem
+							onClick={() =>
+								openDataDirectory(["real_trading", "rocket", "data", "系统日志"])
+							}
+						>
+							<Blocks />
+							下单日志
+							<Badge className="ml-auto font-mono" variant="secondary">
+								rocket
+							</Badge>
+						</DropdownMenuItem>
+					)}
 					<DropdownMenuItem
 						onClick={() => openDataDirectory(["real_trading", "logs"])}
 					>

@@ -3,6 +3,7 @@ import {
 	realMarketOutputAtom,
 	selectStockOutputAtom,
 } from "@/renderer/store"
+import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 import { useAtom } from "jotai"
 import { ExternalLink } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -36,11 +37,13 @@ export function LogDashboard({
 		selectStockOutputAtom,
 	)
 
+	const rocketVisible = useRocketVisible()
 	const [visibleLogs, setVisibleLogs] = useState({
 		fuel: true,
 		rocket: true,
 		select: true,
 	})
+	const showRocketLog = rocketVisible && visibleLogs.rocket
 
 	const openIndependentWindow = async () => {
 		await window.electronAPI.createTerminalWindow()
@@ -65,7 +68,11 @@ export function LogDashboard({
 		}
 	}, [isIndependentWindow])
 
-	const activeCount = Object.values(visibleLogs).filter(Boolean).length
+	const activeCount = [
+		visibleLogs.fuel,
+		visibleLogs.select,
+		showRocketLog,
+	].filter(Boolean).length
 	const gridCols =
 		activeCount === 1
 			? "grid-cols-1"
@@ -115,22 +122,24 @@ export function LogDashboard({
 								选股日志
 							</Label>
 						</div>
-						<div className="flex items-center space-x-2">
-							<Checkbox
-								id="rocket-log"
-								checked={visibleLogs.rocket}
-								disabled={activeCount === 1 && visibleLogs.rocket}
-								onCheckedChange={(checked) =>
-									setVisibleLogs((prev) => ({
-										...prev,
-										rocket: checked === true,
-									}))
-								}
-							/>
-							<Label htmlFor="rocket-log" className="text-sm font-normal">
-								实盘日志
-							</Label>
-						</div>
+						{rocketVisible && (
+							<div className="flex items-center space-x-2">
+								<Checkbox
+									id="rocket-log"
+									checked={visibleLogs.rocket}
+									disabled={activeCount === 1 && visibleLogs.rocket}
+									onCheckedChange={(checked) =>
+										setVisibleLogs((prev) => ({
+											...prev,
+											rocket: checked === true,
+										}))
+									}
+								/>
+								<Label htmlFor="rocket-log" className="text-sm font-normal">
+									实盘日志
+								</Label>
+							</div>
+						)}
 					</div>
 				</div>
 				{isShowExternal && (
@@ -172,7 +181,7 @@ export function LogDashboard({
 					/>
 				)}
 
-				{visibleLogs.rocket && (
+				{showRocketLog && (
 					<LogViewer
 						title="实盘日志"
 						htmlContent={realMarketOutput}

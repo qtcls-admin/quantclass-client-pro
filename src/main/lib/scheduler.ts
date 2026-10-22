@@ -246,6 +246,12 @@ async function wakeUpFusion(userAccount: UserAccount, mw) {
 
 // -- 处理实盘交易逻辑
 async function wakeUpRocket(userAccount: UserAccount, mw) {
+	const qmtMode = _store.get("real_market_config.qmt_mode", "planX")
+	const qmtConnectOk = _store.get("qmt_connect_ok", false) === true
+	if (qmtMode !== "planA" || !qmtConnectOk) {
+		return
+	}
+
 	// TODO: 启动之前，要检查以下QMT的设置是否OK
 	// -- 非 Windows 或非会员用户跳过实盘逻辑
 	if (!platform.isWindows) {
@@ -364,8 +370,7 @@ async function shouldRunMinDataSchedule(): Promise<
 	if (calendar.length === 0) {
 		return {
 			run: false,
-			message:
-				"[min-data] 未读到 period_offset.csv 交易日历，跳过本轮",
+			message: "[min-data] 未读到 period_offset.csv 交易日历，跳过本轮",
 		}
 	}
 

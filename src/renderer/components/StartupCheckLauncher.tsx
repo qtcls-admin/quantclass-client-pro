@@ -27,6 +27,7 @@ const {
 	checkDataConsistencyAlign,
 	getStartupCheckScheduleConfig,
 	reportStartupCheckResult,
+	setStoreValue,
 } = window.electronAPI
 
 export interface DataConsistencyCheckResult {
@@ -156,6 +157,7 @@ export function StartupCheckLauncher() {
 							run: async () => {
 								const res = await checkStartupQmtConnect()
 								setQmtConnectOk(res.ok)
+								await setStoreValue("qmt_connect_ok", res.ok)
 								return {
 									ok: res.ok,
 									detail: res.detail ?? res.message,

@@ -466,12 +466,14 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 		try {
 			const res = await checkStartupQmtConnect()
 			setQmtConnectOk(res.ok)
+			await setStoreValue("qmt_connect_ok", res.ok)
 			if (res.ok) return true
 			toast.dismiss()
 			toast.error(res.message, { description: res.detail })
 			return false
 		} catch {
 			setQmtConnectOk(false)
+			await setStoreValue("qmt_connect_ok", false)
 			toast.dismiss()
 			toast.error("QMT 连通性检查失败，请稍后重试")
 			return false
