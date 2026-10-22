@@ -468,13 +468,11 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 			setQmtConnectOk(res.ok)
 			await setStoreValue("qmt_connect_ok", res.ok)
 			if (res.ok) return true
-			toast.dismiss()
 			toast.error(res.message, { description: res.detail })
 			return false
 		} catch {
 			setQmtConnectOk(false)
 			await setStoreValue("qmt_connect_ok", false)
-			toast.dismiss()
 			toast.error("QMT 连通性检查失败，请稍后重试")
 			return false
 		}
@@ -488,8 +486,11 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 
 			await persistQmtConfig()
 
+			const connectOk = await checkPlanAQmtConnectivityAfterSave()
+			if (!connectOk) return false
+
 			toast.success("QMT 配置保存成功")
-			return await checkPlanAQmtConnectivityAfterSave()
+			return true
 		} catch (error) {
 			toast.error("QMT 配置保存失败")
 			return false
