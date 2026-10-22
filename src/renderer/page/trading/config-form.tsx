@@ -1128,9 +1128,6 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 												<FormLabel className="flex items-center gap-2 flex-wrap">
 													<span>券商QMT 安装路径</span>
 													<span className="text-destructive">*</span>
-													<Badge className="font-semibold">
-														{"<QMT 路径>"}
-													</Badge>
 												</FormLabel>
 												<div className="flex w-full gap-2">
 													<FormControl className="flex-grow">
@@ -1141,7 +1138,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 															onClick={() =>
 																handleFolderSelect.run("qmt_path", "planA")
 															}
-															placeholder="<QMT 路径>"
+															placeholder="请选择券商QMT安装路径"
 														/>
 													</FormControl>
 													<Button
@@ -1268,7 +1265,6 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 										<FormLabel className="flex min-h-5 flex-wrap items-center gap-2">
 											<span>券商QMT 安装路径</span>
 											<span className="text-destructive">*</span>
-											<Badge className="font-semibold">{"<QMT 路径>"}</Badge>
 										</FormLabel>
 										<div className="flex w-full items-center gap-2">
 											<FormControl className="flex-grow">
@@ -1279,7 +1275,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 													onClick={() =>
 														handleFolderSelect.run("qmt_path", "planX")
 													}
-													placeholder="<QMT 路径>"
+													placeholder="请选择券商QMT安装路径"
 												/>
 											</FormControl>
 											<Button
@@ -1392,26 +1388,6 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 								/>
 							)}
 
-							<div className="relative col-span-2 overflow-hidden rounded-xl border border-amber-200/90 bg-amber-50/70 py-3.5 pr-4 pl-5 dark:border-amber-900/70 dark:bg-amber-950/20">
-								<div className="absolute inset-y-0 left-0 w-1 bg-amber-400 dark:bg-amber-500/80" />
-								<div className="flex items-start gap-3">
-									<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/90 shadow-sm ring-1 ring-amber-200 dark:bg-amber-900/40 dark:ring-amber-800">
-										<TriangleAlert className="size-4 text-amber-500 dark:text-amber-400" />
-									</div>
-									<div className="min-w-0 space-y-0.5">
-										<p className="text-sm font-semibold text-amber-950 dark:text-amber-100">
-											请确保 QMT 数据导出路径不为空
-										</p>
-										<p className="text-[13px] leading-5 text-amber-800/90 dark:text-amber-200/80">
-											该文件夹需保存导出的 QMT 数据，若路径为空将导致
-											<span className="font-bold text-amber-950 dark:text-amber-50">
-												无法正常交易
-											</span>
-											，请确认无误后再保存。
-										</p>
-									</div>
-								</div>
-							</div>
 						</div>
 					</Form>
 				)}
