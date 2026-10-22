@@ -29,11 +29,13 @@ import {
 	backtestConfigAtom,
 	isAutoLoginAtom,
 	reTimingAtom,
+	planXConfigAtom,
 	realMarketConfigSchemaAtom,
 } from "@/renderer/store/storage"
 import { macAddressAtom, userAtom } from "@/renderer/store/user"
 import { useLocalVersions, versionsEffectAtom } from "@/renderer/store/versions"
 import { checkPermission } from "@/shared/lib/permission"
+import type { AccountsConfigMap } from "@/shared/types/qmt-accounts"
 import { useMount, useUnmount, useUpdateEffect } from "etc-hooks"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { toast } from "sonner"
@@ -80,6 +82,7 @@ export const useLifeCycle = () => {
 		setIsFullscreen: useSetAtom(isFullscreenAtom),
 		setAccountKey: useSetAtom(accountKeyAtom),
 		setRealMarketConfig: useSetAtom(realMarketConfigSchemaAtom),
+		setPlanXConfig: useSetAtom(planXConfigAtom),
 		setBacktestConfig: useSetAtom(backtestConfigAtom),
 		setReTiming: useSetAtom(reTimingAtom),
 	}
@@ -98,7 +101,7 @@ export const useLifeCycle = () => {
 			qmt_path: "",
 			account_id: "",
 			qmt_port: "58610",
-			qmt_mode: "qmt",
+			qmt_mode: "planX",
 			ws_host: "",
 			ws_port: "",
 			message_robot_url: "",
@@ -107,8 +110,12 @@ export const useLifeCycle = () => {
 				new Date().setFullYear(new Date().getFullYear() - 3),
 			),
 		})
+		const accounts = ((await getStoreValue("accounts", {})) ??
+			{}) as AccountsConfigMap
 
 		if (realMarketConfig && isWindows) {
+			const qmtMode =
+				realMarketConfig?.qmt_mode === "planA" ? "planA" : "planX"
 			setters.setRealMarketConfig((prevConfig) => ({
 				...prevConfig,
 				date_start:
@@ -119,10 +126,10 @@ export const useLifeCycle = () => {
 				filter_kcb: realMarketConfig.filter_kcb ? "1" : "0",
 				filter_cyb: realMarketConfig?.filter_cyb ? "1" : "0",
 				filter_bj: realMarketConfig?.filter_bj ? "1" : "0",
-				qmt_path: realMarketConfig?.qmt_path ?? "",
-				account_id: realMarketConfig?.account_id ?? "",
+				qmt_path: realMarketConfig?.qmt_path ?? prevConfig.qmt_path ?? "",
+				account_id: realMarketConfig?.account_id ?? prevConfig.account_id ?? "",
 				qmt_port: realMarketConfig?.qmt_port ?? "58610",
-				qmt_mode: realMarketConfig?.qmt_mode ?? "qmt",
+				qmt_mode: qmtMode,
 				ws_host: realMarketConfig?.ws_host ?? "",
 				ws_port: realMarketConfig?.ws_port ?? "",
 				message_robot_url: realMarketConfig?.message_robot_url ?? "",
@@ -131,6 +138,16 @@ export const useLifeCycle = () => {
 					| "PERFORMANCE"
 					| "ECONOMY",
 			}))
+			setters.setPlanXConfig((prev) => {
+				const accountId = prev.account_id ?? ""
+				const accountCfg = accountId ? accounts[accountId] : undefined
+				return {
+					account_id: accountId,
+					qmt_path: accountCfg?.qmt_path ?? prev.qmt_path ?? "",
+					exported_dir: accountCfg?.exported_dir ?? prev.exported_dir ?? "",
+					copy_paste_optimize: accountCfg?.copy_paste_optimize ?? false,
+				}
+			})
 		}
 	}
 

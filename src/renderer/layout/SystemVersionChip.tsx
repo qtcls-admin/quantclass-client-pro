@@ -30,8 +30,8 @@ import { useAppUpdate } from "@/renderer/hooks/useAppUpdate"
 import { useVersionCheck } from "@/renderer/hooks/useVersionCheck"
 import { cn } from "@/renderer/lib/utils"
 import { realMarketConfigSchemaAtom } from "@/renderer/store/storage"
-import type { KernelVersionUpdateLevel } from "@/renderer/utils/kernel-version-status"
 import { formatBytes } from "@/renderer/utils/formatBytes"
+import type { KernelVersionUpdateLevel } from "@/renderer/utils/kernel-version-status"
 import { useAtomValue } from "jotai"
 import { CircleArrowUp } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -77,7 +77,7 @@ export function SystemVersionChip({ level }: SystemVersionChipProps) {
 	const navigate = useNavigate()
 	const [showVersionUpdate, setShowVersionUpdate] = useState(false)
 	const [showQmtMode, setShowQmtMode] = useState(false)
-	const qmtMode = useAtomValue(realMarketConfigSchemaAtom).qmt_mode ?? "qmt"
+	const qmtMode = useAtomValue(realMarketConfigSchemaAtom).qmt_mode ?? "planX"
 
 	useEffect(() => {
 		const timer = setInterval(() => {
@@ -90,7 +90,7 @@ export function SystemVersionChip({ level }: SystemVersionChipProps) {
 	const isConfirmReady = isWindows && status === UpdateStatus.Confirm
 	const chipStatus = showQmtMode ? "ok" : KERNEL_LEVEL_CHIP_STATUS[level]
 	const isRequiredUpdate = !showQmtMode && level === "required"
-	const qmtModeLabel = qmtMode === "qmt" ? "正常" : "特邀"
+	const qmtModeLabel = qmtMode === "planA" ? "特邀" : "正常"
 
 	return (
 		<div className="relative">

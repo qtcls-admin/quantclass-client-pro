@@ -87,10 +87,22 @@ const StgImportButton = forwardRef<StgImportHandle>((_props, ref) => {
 			await importSelectStock(configFilePath),
 		onSuccess: async (data) => {
 			if (!data?.success) {
-				toast.error(data?.error ?? "导入失败")
+				toast.dismiss()
+				if (data?.readonlyFiles?.length) {
+					const preview = data.readonlyFiles.slice(0, 12).join("\n")
+					const suffix =
+						data.readonlyFiles.length > 12
+							? `\n…等共 ${data.readonlyFiles.length} 个只读文件`
+							: ""
+					toast.error("导入失败：以下文件为只读", {
+						description: preview + suffix,
+						duration: 12_000,
+					})
+				} else {
+					toast.error(data?.error ?? "导入失败")
+				}
 				return
 			}
-
 			const {
 				configJson: strategyListStr = "",
 				backtestName = "默认策略",

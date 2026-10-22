@@ -16,7 +16,7 @@ import {
 import { cn } from "@/renderer/lib/utils"
 import { ProcessCard } from "@/renderer/page/home/ProcessKanban"
 import { isAutoRocketAtom, isUpdatingAtom } from "@/renderer/store"
-import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
+import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 import { monitorProcessesQueryAtom } from "@/renderer/store/query"
 import { userAtom } from "@/renderer/store/user"
 import { getSelectKernal } from "@/shared/lib/permission"
@@ -136,7 +136,7 @@ function KernelStatusLine({
 
 export function TradingModuleStatusStack() {
 	const researchKernel = useResearchKernel()
-	const rocketVisible = useAtomValue(rocketVisibleAtom)
+	const rocketVisible = useRocketVisible()
 
 	return (
 		<div className="flex flex-col items-end gap-1.5 shrink-0">

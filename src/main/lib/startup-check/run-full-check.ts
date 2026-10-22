@@ -15,6 +15,7 @@ import {
 	checkQmtConnect,
 } from "@/main/lib/startup-check/index.js"
 import { userStore } from "@/main/lib/userStore.js"
+import store from "@/main/store/index.js"
 import logger from "@/main/utils/wiston.js"
 import type { StartupCheckStepResult } from "@/shared/types/startup-check-schedule.js"
 
@@ -105,12 +106,15 @@ export async function runFullStartupCheck(): Promise<StartupCheckStepResult[]> {
 		steps.push({ title: "用户登录", ok: false, detail: msg })
 	}
 
-	const qmt = await checkQmtConnect()
-	steps.push({
-		title: "QMT 连通性",
-		ok: qmt.ok,
-		detail: qmt.detail ?? qmt.message,
-	})
+	const qmtMode = await store.getValue("real_market_config.qmt_mode", "planX")
+	if (qmtMode === "planA") {
+		const qmt = await checkQmtConnect()
+		steps.push({
+			title: "QMT 连通性",
+			ok: qmt.ok,
+			detail: qmt.detail ?? qmt.message,
+		})
+	}
 
 	steps.push(await runDataConsistencyCheckStep())
 

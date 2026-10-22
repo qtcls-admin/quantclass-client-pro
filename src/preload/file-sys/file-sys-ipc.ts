@@ -299,6 +299,7 @@ async function importSelectStockHandler(): Promise<void> {
 			// )
 
 			// -- 复制策略库文件（合并模式：保留已有文件，同名覆盖）
+			const readonlyFiles: string[] = []
 			const copyFiles = (sourcePath: string, targetPath: string) => {
 				logger.info(`[import] 复制文件夹: ${sourcePath} -> ${targetPath}`)
 				if (!fs.existsSync(targetPath)) {
@@ -313,7 +314,20 @@ async function importSelectStockHandler(): Promise<void> {
 					if (fs.statSync(sourceFile).isDirectory()) {
 						copyFiles(sourceFile, targetFile)
 					} else {
-						fs.copyFileSync(sourceFile, targetFile)
+						try {
+							fs.copyFileSync(sourceFile, targetFile)
+						} catch (error) {
+							const err = error as NodeJS.ErrnoException
+							if (
+								err.syscall === "copyfile" &&
+								(err.code === "EACCES" || err.code === "EPERM")
+							) {
+								readonlyFiles.push(targetFile)
+								logger.warn(`[import] 只读文件无法覆盖: ${targetFile}`)
+								continue
+							}
+							throw error
+						}
 					}
 				}
 			}
@@ -350,6 +364,14 @@ async function importSelectStockHandler(): Promise<void> {
 			const sectionFactorPath = path.join(rootPath, "截面因子库")
 			fs.existsSync(sectionFactorPath) &&
 				copyFiles(sectionFactorPath, path.join(realTradingPath, "截面因子库"))
+
+			if (readonlyFiles.length > 0) {
+				return {
+					success: false,
+					error: "存在只读文件",
+					readonlyFiles,
+				}
+			}
 
 			return {
 				success: true,
@@ -412,6 +434,7 @@ async function importFusionHandler(): Promise<void> {
 			}
 
 			// -- 复制策略库文件
+			const readonlyFiles: string[] = []
 			const copyFiles = (sourcePath: string, targetPath: string) => {
 				logger.info(`[import] 复制文件夹: ${sourcePath} -> ${targetPath}`)
 				if (!fs.existsSync(targetPath)) {
@@ -426,7 +449,20 @@ async function importFusionHandler(): Promise<void> {
 					if (fs.statSync(sourceFile).isDirectory()) {
 						copyFiles(sourceFile, targetFile)
 					} else {
-						fs.copyFileSync(sourceFile, targetFile)
+						try {
+							fs.copyFileSync(sourceFile, targetFile)
+						} catch (error) {
+							const err = error as NodeJS.ErrnoException
+							if (
+								err.syscall === "copyfile" &&
+								(err.code === "EACCES" || err.code === "EPERM")
+							) {
+								readonlyFiles.push(targetFile)
+								logger.warn(`[import] 只读文件无法覆盖: ${targetFile}`)
+								continue
+							}
+							throw error
+						}
 					}
 				}
 			}
@@ -463,6 +499,14 @@ async function importFusionHandler(): Promise<void> {
 			const sectionFactorPath = path.join(rootPath, "截面因子库")
 			fs.existsSync(sectionFactorPath) &&
 				copyFiles(sectionFactorPath, path.join(realTradingPath, "截面因子库"))
+
+			if (readonlyFiles.length > 0) {
+				return {
+					success: false,
+					error: "存在只读文件",
+					readonlyFiles,
+				}
+			}
 
 			return {
 				success: true,

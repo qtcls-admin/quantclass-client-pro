@@ -32,7 +32,7 @@ import { useSettings } from "@/renderer/hooks/useSettings"
 import { useVersionCheck } from "@/renderer/hooks/useVersionCheck"
 import { cn } from "@/renderer/lib/utils"
 import Contributors from "@/renderer/page/settings/contributors"
-import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
+import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 import { isAutoLoginAtom, versionListAtom } from "@/renderer/store/storage"
 import { userAtom } from "@/renderer/store/user"
 import { useLocalVersions, versionsAtom } from "@/renderer/store/versions"
@@ -64,7 +64,7 @@ import { AboutPage } from "./about"
 export default function SettingsPage() {
 	const [showContributors, setShowContributors] = useState(false)
 	const { permissions } = useAtomValue(userAtom)
-	const rocketVisible = useAtomValue(rocketVisibleAtom)
+	const rocketVisible = useRocketVisible()
 	const { checkWithToast } = usePermissionCheck()
 	const isMemberOrStock = checkPermission(permissions, "isMember", "isStock")
 	const isMember = checkPermission(permissions, "isMember")

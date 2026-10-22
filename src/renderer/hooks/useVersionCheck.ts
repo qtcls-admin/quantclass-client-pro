@@ -9,7 +9,7 @@
  */
 
 import { useAppVersions } from "@/renderer/hooks/useAppVersion"
-import { rocketVisibleAtom } from "@/renderer/store/rocket-visible"
+import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 import { userAtom } from "@/renderer/store/user"
 import { versionsAtom } from "@/renderer/store/versions"
 import { getSelectKernal } from "@/shared/lib/permission"
@@ -24,7 +24,7 @@ export const useVersionCheck = () => {
 	const { appVersions, isCheckingAppVersions } = useAppVersions()
 	const localVersions = useAtomValue(versionsAtom)
 	const { permissions } = useAtomValue(userAtom)
-	const rocketVisible = useAtomValue(rocketVisibleAtom)
+	const rocketVisible = useRocketVisible()
 	const selectKernal = getSelectKernal(permissions)
 	const selectVersionKey =
 		selectKernal === "fusion" ? "fusionVersion" : "aquaVersion"

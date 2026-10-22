@@ -147,7 +147,7 @@ export const realMarketConfigSchemaAtom = atomWithStorage<
 		qmt_path: "",
 		account_id: "",
 		qmt_port: "58610",
-		qmt_mode: "qmt",
+		qmt_mode: "planX",
 		ws_host: "",
 		ws_port: "",
 		message_robot_url: "",
@@ -157,6 +157,23 @@ export const realMarketConfigSchemaAtom = atomWithStorage<
 		performance_mode: "EQUAL",
 		use_open_sell: "0",
 		date_start: new Date(new Date().setFullYear(new Date().getFullYear() - 3)),
+	},
+	undefined,
+	{ getOnInit: true },
+)
+
+export const planXConfigAtom = atomWithStorage<{
+	account_id: string
+	qmt_path: string
+	exported_dir: string
+	copy_paste_optimize: boolean
+}>(
+	"planXConfig",
+	{
+		account_id: "",
+		qmt_path: "",
+		exported_dir: "",
+		copy_paste_optimize: false,
 	},
 	undefined,
 	{ getOnInit: true },

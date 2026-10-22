@@ -22,6 +22,7 @@ import { isWindows } from "@/renderer/constant"
 import { useHotkeys } from "@/renderer/hooks/useHotkeys"
 import { useRealMarketConfig } from "@/renderer/hooks/useRealMarketConfig"
 import { isLogModalOpenAtom, isShowMonitorPanelAtom } from "@/renderer/store"
+import { planXConfigAtom } from "@/renderer/store/storage"
 import { userAtom } from "@/renderer/store/user"
 import { getSelectKernal } from "@/shared/lib/permission"
 import { useAtom, useAtomValue } from "jotai"
@@ -43,6 +44,11 @@ export function LogMenuButton() {
 	const { realMarketConfig } = useRealMarketConfig()
 	const { permissions } = useAtomValue(userAtom)
 	const selectKernal = getSelectKernal(permissions)
+	const planXConfig = useAtomValue(planXConfigAtom)
+	const qmtFolderPath =
+		realMarketConfig.qmt_mode === "planA"
+			? realMarketConfig.qmt_path
+			: planXConfig.qmt_path
 	const [isLogModalOpen, setIsLogModalOpen] = useAtom(isLogModalOpenAtom)
 	const [isShowMonitorPanel, setIsShowMonitorPanel] = useAtom(
 		isShowMonitorPanelAtom,
@@ -82,9 +88,9 @@ export function LogMenuButton() {
 						)}
 					</DropdownMenuItem>
 					<DropdownMenuSeparator />
-					{realMarketConfig.qmt_path && (
+					{qmtFolderPath && (
 						<DropdownMenuItem
-							onClick={() => openDirectory([realMarketConfig.qmt_path])}
+							onClick={() => openDirectory([qmtFolderPath])}
 						>
 							<ExternalLink />
 							QMT文件夹

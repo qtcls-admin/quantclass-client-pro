@@ -30,7 +30,10 @@ import {
 	minDataModeAtom,
 	realConfigEditModalAtom,
 } from "@/renderer/store"
-import { realMarketConfigSchemaAtom } from "@/renderer/store/storage"
+import {
+	planXConfigAtom,
+	realMarketConfigSchemaAtom,
+} from "@/renderer/store/storage"
 import { getBrokerNameByAccountId } from "@/renderer/utils/broker"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { CircleHelp, Play, RefreshCw, Settings, Trash2 } from "lucide-react"
@@ -81,6 +84,7 @@ const RealtimeData: FC = () => {
 	const [mode, setMode] = useAtom(minDataModeAtom)
 	const isMinDataUpdating = useAtomValue(isMinDataUpdatingAtom)
 	const realMarketConfig = useAtomValue(realMarketConfigSchemaAtom)
+	const planXConfig = useAtomValue(planXConfigAtom)
 	const setRealConfigEditModal = useSetAtom(realConfigEditModalAtom)
 	const { isAutoRocket, handleToggleAutoRocket } = useToggleAutoRealTrading()
 	const { startMinDataSchedule, stopMinDataSchedule, syncMinDataSchedule } =
@@ -117,13 +121,17 @@ const RealtimeData: FC = () => {
 		return () => removeMinDataScheduleStatusListener()
 	}, [enableEtfMinData])
 
-	const isQmtConfigured =
-		!!realMarketConfig?.account_id?.trim() &&
-		!!realMarketConfig?.qmt_path?.trim()
+	const isPlanA = realMarketConfig?.qmt_mode === "planA"
+	const qmtAccountId = isPlanA
+		? realMarketConfig?.account_id
+		: planXConfig.account_id
+	const qmtPath = isPlanA ? realMarketConfig?.qmt_path : planXConfig.qmt_path
+	const exportedDir = planXConfig.exported_dir
+	const isQmtConfigured = isPlanA
+		? !!qmtAccountId?.trim() && !!qmtPath?.trim()
+		: !!qmtAccountId?.trim() && !!qmtPath?.trim() && !!exportedDir?.trim()
 
-	const brokerName = getBrokerNameByAccountId(
-		realMarketConfig?.account_id ?? "",
-	)
+	const brokerName = getBrokerNameByAccountId(qmtAccountId ?? "")
 	const brokerDisplay = brokerName || "未知"
 	const isCiccBroker = brokerName === "中金"
 
@@ -156,11 +164,15 @@ const RealtimeData: FC = () => {
 
 	const handleExecConfirmClick = useCallback(() => {
 		if (!isQmtConfigured) {
-			toast.warning("QMT 未配置，请先在实盘配置中填写 QMT 账户号和安装路径")
+			toast.warning(
+				isPlanA
+					? "QMT 未配置，请先在实盘配置中填写 QMT 账户号和安装路径"
+					: "QMT 未配置，请先在实盘配置中填写账户号、安装路径和导出路径",
+			)
 			return
 		}
 		setExecConfirmOpen(true)
-	}, [isQmtConfigured])
+	}, [isQmtConfigured, isPlanA])
 
 	const handleConfirmExec = useCallback(() => {
 		setExecConfirmOpen(false)
@@ -219,15 +231,23 @@ const RealtimeData: FC = () => {
 						<div className="flex items-center gap-2">
 							<span className="font-medium">QMT 账户号：</span>
 							<span className="text-muted-foreground">
-								{realMarketConfig?.account_id?.trim() || "未配置"}
+								{qmtAccountId?.trim() || "未配置"}
 							</span>
 						</div>
 						<div className="flex items-center gap-2">
 							<span className="font-medium">QMT 安装路径：</span>
 							<span className="truncate text-muted-foreground">
-								{realMarketConfig?.qmt_path?.trim() || "未配置"}
+								{qmtPath?.trim() || "未配置"}
 							</span>
 						</div>
+						{!isPlanA && (
+							<div className="flex items-center gap-2">
+								<span className="font-medium">QMT 导出路径：</span>
+								<span className="truncate text-muted-foreground">
+									{exportedDir?.trim() || "未配置"}
+								</span>
+							</div>
+						)}
 						<div className="flex items-center gap-2">
 							<span className="font-medium">券商：</span>
 							{isCiccBroker ? (
@@ -252,11 +272,11 @@ const RealtimeData: FC = () => {
 						实盘配置
 					</Button>
 				</div>
-				{(!realMarketConfig?.account_id?.trim() ||
-					!realMarketConfig?.qmt_path?.trim()) && (
+				{!isQmtConfigured && (
 					<p className="mt-2 text-amber-600 dark:text-amber-500">
-						执行前请先在实盘配置中填写 QMT 账户号和 QMT
-						安装路径，否则数据获取将失败。
+						{isPlanA
+							? "执行前请先在实盘配置中填写 QMT 账户号和 QMT 安装路径，否则数据获取将失败。"
+							: "执行前请先在实盘配置中填写账户号、安装路径和导出路径，否则数据获取将失败。"}
 					</p>
 				)}
 			</div>
