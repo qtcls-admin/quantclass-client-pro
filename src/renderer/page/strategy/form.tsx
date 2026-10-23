@@ -1263,6 +1263,40 @@ export function SelectStgForm({
 								</FormItem>
 							)}
 						/>
+						<FormField
+							control={form.control}
+							name="stock_timing"
+							render={({ field }) => {
+								const regionText = (field.value ?? [])
+									.map((item: { region?: string }) => item?.region?.trim())
+									.filter((region): region is string => Boolean(region))
+									.join("，")
+								return (
+									<FormItem className={cn("flex flex-col")}>
+										<div className="rounded-lg border">
+											<FormLabel className="flex items-center gap-1 p-2 py-3">
+												<Timer className="size-4 mr-1" />
+												个股择时策略
+												<span className="text-xs">（暂不支持直接编辑）</span>
+											</FormLabel>
+											<Separator />
+											<div className="px-4 py-3">
+												{regionText ? (
+													<p className="text-sm text-foreground break-words">
+														{regionText}
+													</p>
+												) : (
+													<p className="text-muted-foreground text-xs">
+														暂无个股择时策略，请先进行配置
+													</p>
+												)}
+											</div>
+										</div>
+										<FormMessage />
+									</FormItem>
+								)
+							}}
+						/>
 						<div className="flex flex-col gap-3 bg-gray-100 border p-2 rounded-lg dark:bg-black">
 							<h3 className="text-sm text-warning-600 dark:text-warning flex items-center gap-1">
 								<Biohazard className="size-4 mr-1 font-bold" />
