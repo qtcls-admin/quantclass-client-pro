@@ -58,10 +58,28 @@ const {
 	getMacAddress,
 	setAutoLaunch,
 	getRebalanceTimeConfig,
+	setRebalanceTimeConfig,
 	getStoreValue,
 	getUserAccount,
 	setStoreValue,
 } = window.electronAPI
+
+function readPersistedRebTimeConfig(): Record<
+	string,
+	RebTimeConfig<SelectStgType | PosStrategyType>
+> {
+	try {
+		const raw = localStorage.getItem("rebTimeConfig")
+		if (!raw) return {}
+		const parsed = JSON.parse(raw) as Record<
+			string,
+			RebTimeConfig<SelectStgType | PosStrategyType>
+		>
+		return parsed && typeof parsed === "object" ? parsed : {}
+	} catch {
+		return {}
+	}
+}
 
 /**
  * -- 生命周期管理 Hook
@@ -106,13 +124,19 @@ export const useLifeCycle = () => {
 	 */
 	const initScheduleTask = async () => {
 		const rebTimeFromStore = await getRebalanceTimeConfig()
-		if (Object.keys(rebTimeFromStore).length > 0) {
+		const hasMainRebTime = Object.keys(rebTimeFromStore).length > 0
+
+		if (hasMainRebTime) {
 			setters.setRebTimeConfig(
 				rebTimeFromStore as Record<
 					string,
 					RebTimeConfig<SelectStgType | PosStrategyType>
 				>,
 			)
+		} else {
+			const rebTimeFromLocal = readPersistedRebTimeConfig()
+			await setRebalanceTimeConfig(rebTimeFromLocal)
+			setters.setRebTimeConfig(rebTimeFromLocal)
 		}
 
 		const realMarketConfig = await getStoreValue("real_market_config", {
