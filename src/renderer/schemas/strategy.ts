@@ -134,6 +134,5 @@ export const SelectStgFormSchema = SelectStgSchema.omit({ name: true })
 	.extend({
 		select_num: SelectNumFormSchema,
 		offset_list: OffsetListFormSchema,
-		split_order_amount: SplitOrderAmountFormSchema,
 	})
 	.passthrough() // 允许额外的字段

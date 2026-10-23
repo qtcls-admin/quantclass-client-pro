@@ -11,7 +11,6 @@
 import {
 	POS_MGMT_STRATEGY_CONFIG,
 	SELECT_STOCK_STRATEGY_CONFIG,
-	isWindows,
 } from "@/renderer/constant"
 import { useConfig } from "@/renderer/hooks/useConfig"
 import { useHandleTimeTask } from "@/renderer/hooks/useHandleTimeTask"
@@ -24,20 +23,25 @@ import {
 	isUpdatingAtom,
 	loadingAnimeAtom,
 } from "@/renderer/store"
+import { qmtConnectOkAtom } from "@/renderer/store/rocket-visible"
 import {
 	accountKeyAtom,
 	backtestConfigAtom,
 	isAutoLoginAtom,
-	reTimingAtom,
 	planXConfigAtom,
-	rebTimeConfigAtom,
+	reTimingAtom,
 	realMarketConfigSchemaAtom,
+	rebTimeConfigAtom,
 } from "@/renderer/store/storage"
-import { qmtConnectOkAtom } from "@/renderer/store/rocket-visible"
 import { macAddressAtom, userAtom } from "@/renderer/store/user"
 import { useLocalVersions, versionsEffectAtom } from "@/renderer/store/versions"
-import { checkPermission } from "@/shared/lib/permission"
 import type { PosStrategyType, SelectStgType } from "@/renderer/types/strategy"
+import {
+	type SplitOrderMultiplier,
+	parseSplitOrderAmount,
+	randomSplitOrderAmount,
+} from "@/renderer/utils/split-order-amount"
+import { checkPermission } from "@/shared/lib/permission"
 import type { AccountsConfigMap } from "@/shared/types/qmt-accounts"
 import type { RebTimeConfig } from "@/shared/types/reb-time-config.js"
 import { useMount, useUnmount, useUpdateEffect } from "etc-hooks"
@@ -127,14 +131,31 @@ export const useLifeCycle = () => {
 				new Date().setFullYear(new Date().getFullYear() - 3),
 			),
 		})
+		const marketCfg = realMarketConfig as {
+			split_order_amount?: unknown
+			split_order_multiplier?: unknown
+		}
+		const parsedSplit = parseSplitOrderAmount(marketCfg?.split_order_amount)
+		const splitMultiplier: SplitOrderMultiplier =
+			marketCfg?.split_order_multiplier === "3" ||
+			marketCfg?.split_order_multiplier === 3
+				? 3
+				: 1
+		const splitOrderAmount =
+			parsedSplit ?? randomSplitOrderAmount(splitMultiplier)
+		if (parsedSplit === undefined) {
+			await setStoreValue("real_market_config", {
+				...realMarketConfig,
+				split_order_amount: splitOrderAmount,
+			})
+		}
 		const accounts = ((await getStoreValue("accounts", {})) ??
 			{}) as AccountsConfigMap
 		const qmtConnectOk = await getStoreValue("qmt_connect_ok", false)
 		setters.setQmtConnectOk(qmtConnectOk === true)
 
-		if (realMarketConfig && isWindows) {
-			const qmtMode =
-				realMarketConfig?.qmt_mode === "planA" ? "planA" : "planX"
+		if (realMarketConfig) {
+			const qmtMode = realMarketConfig?.qmt_mode === "planA" ? "planA" : "planX"
 			setters.setRealMarketConfig((prevConfig) => ({
 				...prevConfig,
 				date_start:
@@ -152,6 +173,10 @@ export const useLifeCycle = () => {
 				ws_host: realMarketConfig?.ws_host ?? "",
 				ws_port: realMarketConfig?.ws_port ?? "",
 				message_robot_url: realMarketConfig?.message_robot_url ?? "",
+				split_order_amount: splitOrderAmount,
+				split_order_multiplier:
+					(realMarketConfig?.split_order_multiplier as "1" | "3" | undefined) ??
+					"1",
 				performance_mode: (realMarketConfig.performance_mode || "EQUAL") as
 					| "EQUAL"
 					| "PERFORMANCE"

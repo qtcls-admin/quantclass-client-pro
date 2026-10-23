@@ -22,14 +22,11 @@ import {
 } from "@/renderer/components/ui/form"
 import { Input as InputUI } from "@/renderer/components/ui/input"
 import { useFusionManager } from "@/renderer/hooks/useFusionManager"
-import {
-	rebTimeConfigAtom,
-	strategyRuntimeConfigAtom,
-} from "@/renderer/store/storage"
+import { rebTimeConfigAtom } from "@/renderer/store/storage"
 import type { PosStrategyType } from "@/renderer/types/strategy"
 import { collectFusionRemarkNames } from "@/renderer/utils/strategy"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useAtom, useAtomValue } from "jotai"
+import { useAtomValue } from "jotai"
 import { Biohazard, CircleHelp, Loader, Shuffle } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
@@ -48,13 +45,6 @@ function formatRebTimeDisplay(
 
 const schema = z.object({
 	remark_name: z.string().default(""),
-	split_order_amount: z.union([z.number(), z.string()]).refine(
-		(val) => {
-			const num = typeof val === "string" ? Number(val) : val
-			return !Number.isNaN(num) && num >= 6000 && num <= 12000
-		},
-		{ message: "拆单金额须在 6000～12000 之间" },
-	),
 })
 
 export type PosStrategyFormData = z.infer<typeof schema>
@@ -76,7 +66,6 @@ export function PosStrategyForm({
 	const [rebTimeConfigModalOpen, setRebTimeConfigModalOpen] = useState(false)
 	const { fusion, updateFusionPosStrategy } = useFusionManager()
 	const rebTimeConfig = useAtomValue(rebTimeConfigAtom)
-	const [, setRuntimeConfig] = useAtom(strategyRuntimeConfigAtom)
 	const rebalanceTime = posStrategy.rebalance_time ?? "close-open"
 	const form = useForm<PosStrategyFormData>({
 		resolver: zodResolver(schema),
@@ -100,11 +89,6 @@ export function PosStrategyForm({
 				return
 			}
 		}
-		const num = Number(data.split_order_amount)
-		setRuntimeConfig((prev) => ({
-			...prev,
-			[posStrategy.name]: { ...prev[posStrategy.name], split_order_amount: num },
-		}))
 		try {
 			await updateFusionPosStrategy(fusionIndex, {
 				remark_name: data.remark_name,
@@ -143,46 +127,6 @@ export function PosStrategyForm({
 								<Biohazard className="mr-1 size-4" />
 								以下为高阶配置，默认会自动随机生成，无需手动设置。如果你不太了解，千万不要修改！
 							</h3>
-							<FormField
-								control={form.control}
-								name="split_order_amount"
-								render={({ field }) => (
-									<FormItem className="flex flex-col">
-										<FormLabel className="flex items-center gap-1">
-											<span>🧬 拆单金额</span>
-											<ButtonTooltip content="拆单金额默认在 6000 到 12000 之间随机取值">
-												<CircleHelp className="h-4 w-4 text-muted-foreground hover:cursor-pointer" />
-											</ButtonTooltip>
-										</FormLabel>
-										<FormControl>
-											<InputUI
-												{...field}
-												type="number"
-												min={6000}
-												max={12000}
-												className="bg-background"
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<Button
-								type="button"
-								size="sm"
-								variant="outline"
-								className="w-52"
-								onClick={(e) => {
-									e.preventDefault()
-									form.setValue(
-										"split_order_amount",
-										Math.floor(Math.random() * (12000 - 6000 + 1)) + 6000,
-									)
-								}}
-							>
-								<Shuffle className="mr-2 h-4 w-4" />
-								随机生成拆单金额
-							</Button>
 							<FormItem className="flex flex-col">
 								<FormLabel className="flex items-center gap-1">
 									<span>🈳 卖出时间</span>

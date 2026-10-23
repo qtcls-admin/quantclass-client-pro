@@ -12,7 +12,6 @@ import { CiccBseNoticeDialog } from "@/renderer/components/CiccBseNoticeDialog"
 import { ClearFactorCacheConfirmDialog } from "@/renderer/components/ClearFactorCacheConfirmDialog"
 import { PlanAConfirmDialog } from "@/renderer/components/PlanAConfirmDialog"
 import { PerformanceModeSelectTabs } from "@/renderer/components/select-tabs"
-import { Badge } from "@/renderer/components/ui/badge"
 import { Button } from "@/renderer/components/ui/button"
 import ButtonTooltip from "@/renderer/components/ui/button-tooltip"
 // import { Card, CardContent, CardFooter } from "@/renderer/components/ui/card"
@@ -45,20 +44,23 @@ import {
 	realMarketConfigSchemaAtom,
 } from "@/renderer/store/storage"
 import { userAtom } from "@/renderer/store/user"
-import { checkPermission } from "@/shared/lib/permission"
 import { getBrokerNameByAccountId } from "@/renderer/utils/broker"
+import {
+	parseSplitOrderAmount,
+	randomSplitOrderAmount,
+} from "@/renderer/utils/split-order-amount"
+import { checkPermission } from "@/shared/lib/permission"
 import type { AccountsConfigMap } from "@/shared/types/qmt-accounts"
 import { zodResolver } from "@hookform/resolvers/zod"
 import dayjs from "dayjs"
 import { useDebounceFn } from "etc-hooks"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import {
-	ChevronRight,
 	CircleHelp,
 	Folder,
-	Monitor,
 	PlayCircle,
 	Save,
+	Shuffle,
 	Trash2,
 	TriangleAlert,
 } from "lucide-react"
@@ -171,6 +173,8 @@ const RealMarketFormSchema = z.object({
 		},
 		{ message: "逆回购保留金额必须是一个大于等于0的数字" },
 	),
+	split_order_amount: z.union([z.number(), z.string()]).optional(),
+	split_order_multiplier: z.enum(["1", "3"]).optional(),
 })
 
 export const RealMarketConfigSchema = RealMarketFormSchema.merge(
@@ -191,11 +195,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 	const { data: rocketStatus = false } = useAtomValue(rocketStatusQueryAtom)
 	const { permissions } = useAtomValue(userAtom)
 	const { checkWithToast } = usePermissionCheck()
-	const isMemberOrStock = checkPermission(
-		permissions,
-		"isMember",
-		"isStock",
-	)
+	const isMemberOrStock = checkPermission(permissions, "isMember", "isStock")
 	const isMember = checkPermission(permissions, "isMember")
 	const [choosing, setChoosing] = useState(false)
 	const [realMarketConfig, setRealMarketConfig] = useAtom(
@@ -231,6 +231,9 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 			performance_mode: realMarketConfig.performance_mode ?? "EQUAL",
 			use_open_sell: realMarketConfig.use_open_sell ?? "0",
 			reverse_repo_keep: realMarketConfig.reverse_repo_keep ?? 1000,
+			split_order_amount: realMarketConfig.split_order_amount ?? "",
+			split_order_multiplier:
+				(realMarketConfig.split_order_multiplier as "1" | "3") ?? "1",
 		}
 	}, [realMarketConfig])
 
@@ -433,6 +436,14 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 				return false
 			}
 
+			if (
+				parseSplitOrderAmount(form.getValues("split_order_amount")) ===
+				undefined
+			) {
+				toast.error("请先点击随机生成拆单金额（6000～12000）")
+				return false
+			}
+
 			await createRealTradingDir()
 
 			const values = form.getValues()
@@ -440,7 +451,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 				{}) as Record<string, unknown>
 
 			// -- 处理 start_date，确保保存的是字符串；QMT 字段沿用已有配置
-			const { date_start, ...restValues } = values
+			const { date_start, split_order_amount, ...restValues } = values
 			const formattedValues = {
 				...existing,
 				...restValues,
@@ -450,6 +461,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 				date_start: date_start
 					? dayjs(date_start).format("YYYY-MM-DD")
 					: existing.date_start,
+				split_order_amount: Number(split_order_amount),
 			}
 
 			setPerformanceMode(values.performance_mode)
@@ -457,6 +469,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 			setRealMarketConfig((prev) => ({
 				...prev,
 				...values,
+				split_order_amount: Number(split_order_amount),
 			}))
 
 			toast.success("实盘配置保存成功")
@@ -837,74 +850,37 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 							</div>
 						</div>
 
-						<div className="grid grid-cols-2 gap-4 gap-y-6">
-							<FormItem>
-								<FormLabel>
-									QMT 配置
-									<span className="text-xs text-muted-foreground ml-1">
-										QMT相关配置请在 QMT配置 中填写
-									</span>
-								</FormLabel>
-								<Button
-									type="button"
-									size="sm"
-									variant="outline"
-									className="w-fit"
-									onClick={() => onGoToQmt?.()}
-								>
-									<Monitor className="mr-2 h-4 w-4" />
-									前往 QMT配置
-									<ChevronRight className="ml-1 h-4 w-4" />
-								</Button>
-							</FormItem>
-
-							<FormField
-								name="date_start"
-								control={form.control}
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>
-											计算起始日期 <span className="text-destructive">*</span>
-											<span className="text-xs text-muted-foreground">
-												运行选股的起始日期，一般参数越大需要越久的日期
-											</span>
-										</FormLabel>
-
-										<FormControl>
-											<DatePicker {...field} disableFutureDates />
-										</FormControl>
-									</FormItem>
-								)}
-							/>
-
+						<div className="grid grid-cols-2 items-start gap-4 gap-y-6">
 							<FormField
 								name="message_robot_url"
 								control={form.control}
 								render={({ field }) => (
-									<FormItem>
-										<FormLabel>
-											消息机器人 URL{" "}
-											<span className="text-xs text-muted-foreground">
-												机器人配置参考：
-											</span>
-											<span
-												onKeyDown={(e) => {
-													if (e.key === "Enter" || e.key === " ") {
-														e.preventDefault()
+									<FormItem className="flex flex-col gap-2">
+										<FormLabel className="flex min-h-14 items-end leading-snug">
+											<span>
+												消息机器人 URL{" "}
+												<span className="text-xs text-muted-foreground">
+													机器人配置参考：
+												</span>
+												<span
+													onKeyDown={(e) => {
+														if (e.key === "Enter" || e.key === " ") {
+															e.preventDefault()
+														}
+													}}
+													onClick={() =>
+														openUrl("https://bbs.quantclass.cn/thread/10975")
 													}
-												}}
-												onClick={() =>
-													openUrl("https://bbs.quantclass.cn/thread/10975")
-												}
-												className="underline cursor-pointer hover:no-underline text-xs"
-											>
-												quantclass/10975
+													className="underline cursor-pointer hover:no-underline text-xs"
+												>
+													quantclass/10975
+												</span>
 											</span>
 										</FormLabel>
 										<FormControl>
 											<Input
 												{...field}
-												className="w-full"
+												className="h-10 w-full"
 												placeholder="可以不填..."
 											/>
 										</FormControl>
@@ -913,121 +889,162 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 								)}
 							/>
 							<FormField
+								name="date_start"
+								control={form.control}
+								render={({ field }) => (
+									<FormItem className="flex flex-col gap-2">
+										<FormLabel className="flex min-h-14 items-end leading-snug">
+											<span>
+												计算起始日期 <span className="text-destructive">*</span>
+												<span className="text-xs text-muted-foreground">
+													运行选股的起始日期，一般参数越大需要越久的日期
+												</span>
+											</span>
+										</FormLabel>
+										<FormControl>
+											<DatePicker
+												{...field}
+												disableFutureDates
+												className="h-10 w-full"
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								name="split_order_amount"
+								control={form.control}
+								render={({ field }) => {
+									const multiplierStr =
+										form.watch("split_order_multiplier") ?? "1"
+									const multiplier = Number(multiplierStr) as 1 | 3
+									const is3X = multiplier === 3
+									return (
+										<FormItem className="flex flex-col gap-2">
+											<FormLabel className="flex min-h-10 items-end gap-1 leading-snug">
+												<span>拆单金额</span>
+												<span className="text-destructive">*</span>
+												<ButtonTooltip
+													content={`点击「随机生成」在 ${is3X ? "18000～36000" : "6000～12000"} 间取值，不可手动输入`}
+												>
+													<CircleHelp className="h-4 w-4 text-muted-foreground hover:cursor-pointer" />
+												</ButtonTooltip>
+											</FormLabel>
+											<div className="flex h-10 w-full items-center gap-2">
+												<FormControl className="min-w-0 flex-1">
+													<Input
+														ref={field.ref}
+														name={field.name}
+														onBlur={field.onBlur}
+														readOnly
+														tabIndex={-1}
+														value={
+															field.value === "" || field.value === undefined
+																? ""
+																: String(field.value)
+														}
+														disabled={!isMemberOrStock}
+														className="h-10 cursor-default bg-muted/30"
+														placeholder="请点击右侧随机生成"
+													/>
+												</FormControl>
+												<Button
+													type="button"
+													size="sm"
+													variant="outline"
+													className="h-10 shrink-0 px-3"
+													disabled={!isMemberOrStock}
+													onClick={(e) => {
+														e.preventDefault()
+														form.setValue(
+															"split_order_amount",
+															randomSplitOrderAmount(multiplier),
+															{ shouldValidate: true },
+														)
+													}}
+												>
+													<Shuffle className="mr-2 h-4 w-4" />
+													随机
+												</Button>
+												{/* 倍数切换 */}
+												<div className="flex shrink-0 items-center rounded-lg border bg-muted/40 p-0.5">
+													{(["1", "3"] as const).map((m) => (
+														<button
+															key={m}
+															type="button"
+															disabled={!isMemberOrStock}
+															onClick={() => {
+																form.setValue("split_order_multiplier", m)
+																// 切换后自动重置拆单金额，避免旧值超出新范围
+																form.setValue("split_order_amount", "")
+															}}
+															className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all focus-visible:outline-none ${
+																multiplierStr === m
+																	? "bg-neutral-950 text-white shadow-sm dark:bg-neutral-100 dark:text-neutral-950"
+																	: "text-muted-foreground hover:text-foreground"
+															}`}
+														>
+															{m}X
+														</button>
+													))}
+												</div>
+											</div>
+											{is3X && (
+												<div className="animate-pulse flex items-center gap-2 rounded-lg border border-amber-300/80 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-400">
+													<TriangleAlert className="h-3.5 w-3.5 shrink-0" />
+													<span>
+														3X 拆单金额较大（18000～36000），可能会导致
+														<span className="font-semibold">滑点过大</span>
+														，请谨慎使用
+													</span>
+												</div>
+											)}
+											<FormMessage />
+										</FormItem>
+									)
+								}}
+							/>
+							<FormField
 								name="reverse_repo_keep"
 								control={form.control}
 								render={({ field, formState }) => (
-									<FormItem>
-										<FormLabel className="!mt-0 flex items-center gap-1 mr-1">
-											<span className="font-semibold">逆回购保留金额</span>{" "}
-											<span className="text-xs text-muted-foreground">
-												如果未了解请不要修改
-											</span>{" "}
-											<ButtonTooltip
-												content={
-													<div>
-														<p>
-															每天尾盘自动买入1天期的逆回购，如果不想全部的钱都买逆回购，可以在这里设置需要保留的金额
-														</p>
-													</div>
-												}
-											>
-												<CircleHelp
-													className="h-4 w-4 text-muted-foreground hover:cursor-pointer"
-													onClick={(e) => e.stopPropagation()}
-												/>
-											</ButtonTooltip>
+									<FormItem className="flex flex-col gap-2">
+										<FormLabel className="flex min-h-10 items-end gap-1 leading-snug">
+											<span className="flex flex-wrap items-center gap-1">
+												<span>逆回购保留金额</span>
+												<span className="text-xs text-muted-foreground">
+													如果未了解请不要修改
+												</span>
+												<ButtonTooltip
+													content={
+														<div>
+															<p>
+																每天尾盘自动买入1天期的逆回购，如果不想全部的钱都买逆回购，可以在这里设置需要保留的金额
+															</p>
+														</div>
+													}
+												>
+													<CircleHelp
+														className="h-4 w-4 text-muted-foreground hover:cursor-pointer"
+														onClick={(e) => e.stopPropagation()}
+													/>
+												</ButtonTooltip>
+											</span>
 										</FormLabel>
 										<FormControl>
 											<Input
 												type="number"
 												{...field}
-												value={field.value || ""} // 确保输入框始终有值
+												value={field.value || ""}
 												min={0}
+												className="h-10 w-full"
 												placeholder="请填写保留金额"
 											/>
 										</FormControl>
 										<FormMessage>
 											{formState.errors.reverse_repo_keep?.message}
 										</FormMessage>
-									</FormItem>
-								)}
-							/>
-							<FormField
-								name="use_open_sell"
-								control={form.control}
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel className="!mt-0 flex items-center gap-1 mr-1">
-											<span className="font-semibold">开盘是否挂涨停卖出</span>{" "}
-											<span className="text-destructive">*</span>
-											<span className="text-xs text-muted-foreground">
-												该功能需配合新版内核使用
-											</span>
-											<ButtonTooltip
-												content={
-													<div className="max-w-sm space-y-2">
-														<p className="font-semibold">开盘挂涨停介绍：</p>
-														<p>
-															"开盘挂涨停"是一种用于保证换仓时获取最大利润的方法。
-														</p>
-														<p>
-															它会在9点15分的时候把当日需要卖出的股票挂涨停单。理想情况下，这支股票当日在正式换仓前涨停，就可以直接卖出，防止它之后跌下来。
-														</p>
-														<p>
-															缺点是，它和轧差逻辑冲突，所以可能会出现当日开盘卖出后，到了换仓时间又买回来的情况。
-														</p>
-														<p>该功能属于高阶玩法，默认不开启。</p>
-														<p>rocket内核1.9.6d.20260407及以上</p>
-														<p>
-															未升级到新版本的内核【不影响使用】，"开盘挂涨停"功能在老版本中是默认开启的。
-														</p>
-													</div>
-												}
-											>
-												<CircleHelp
-													className="h-4 w-4 text-muted-foreground hover:cursor-pointer"
-													onClick={(e) => e.stopPropagation()}
-												/>
-											</ButtonTooltip>
-										</FormLabel>
-										<FormControl>
-											<RadioGroup
-												disabled={!isMemberOrStock}
-												onValueChange={async (value) => {
-													const isRunning = await checkKernalRunning(["rocket"])
-													if (isRunning) {
-														toast.warning(
-															"实盘内核正在运行中，无法修改开盘挂涨停卖出设置",
-														)
-														return
-													}
-													field.onChange(value)
-												}}
-												value={field.value}
-												className="flex space-x-1"
-											>
-												<FormItem className="flex items-center space-x-1 space-y-0">
-													<FormControl>
-														<RadioGroupItem value="1" />
-													</FormControl>
-													<FormLabel
-														className={`${field.value === "1" ? "font-bold" : "font-normal"}`}
-													>
-														启用
-													</FormLabel>
-												</FormItem>
-												<FormItem className="flex items-center space-x-1 space-y-0">
-													<FormControl>
-														<RadioGroupItem value="0" />
-													</FormControl>
-													<FormLabel
-														className={`${field.value === "0" ? "font-bold" : "font-normal"}`}
-													>
-														禁用
-													</FormLabel>
-												</FormItem>
-											</RadioGroup>
-										</FormControl>
 									</FormItem>
 								)}
 							/>
@@ -1190,6 +1207,92 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 													/>
 												</FormControl>
 												<FormMessage />
+											</FormItem>
+										)}
+									/>
+
+									<FormField
+										name="use_open_sell"
+										control={form.control}
+										render={({ field }) => (
+											<FormItem className="col-span-2">
+												<FormLabel className="!mt-0 flex items-center gap-1 mr-1">
+													<span className="font-semibold">
+														开盘是否挂涨停卖出
+													</span>{" "}
+													<span className="text-destructive">*</span>
+													<span className="text-xs text-muted-foreground">
+														该功能需配合新版内核使用
+													</span>
+													<ButtonTooltip
+														content={
+															<div className="max-w-sm space-y-2">
+																<p className="font-semibold">
+																	开盘挂涨停介绍：
+																</p>
+																<p>
+																	"开盘挂涨停"是一种用于保证换仓时获取最大利润的方法。
+																</p>
+																<p>
+																	它会在9点15分的时候把当日需要卖出的股票挂涨停单。理想情况下，这支股票当日在正式换仓前涨停，就可以直接卖出，防止它之后跌下来。
+																</p>
+																<p>
+																	缺点是，它和轧差逻辑冲突，所以可能会出现当日开盘卖出后，到了换仓时间又买回来的情况。
+																</p>
+																<p>该功能属于高阶玩法，默认不开启。</p>
+																<p>rocket内核1.9.6d.20260407及以上</p>
+																<p>
+																	未升级到新版本的内核【不影响使用】，"开盘挂涨停"功能在老版本中是默认开启的。
+																</p>
+															</div>
+														}
+													>
+														<CircleHelp
+															className="h-4 w-4 text-muted-foreground hover:cursor-pointer"
+															onClick={(e) => e.stopPropagation()}
+														/>
+													</ButtonTooltip>
+												</FormLabel>
+												<FormControl>
+													<RadioGroup
+														disabled={!isMemberOrStock}
+														onValueChange={async (value) => {
+															const isRunning = await checkKernalRunning([
+																"rocket",
+															])
+															if (isRunning) {
+																toast.warning(
+																	"实盘内核正在运行中，无法修改开盘挂涨停卖出设置",
+																)
+																return
+															}
+															field.onChange(value)
+														}}
+														value={field.value}
+														className="flex space-x-1"
+													>
+														<FormItem className="flex items-center space-x-1 space-y-0">
+															<FormControl>
+																<RadioGroupItem value="1" />
+															</FormControl>
+															<FormLabel
+																className={`${field.value === "1" ? "font-bold" : "font-normal"}`}
+															>
+																启用
+															</FormLabel>
+														</FormItem>
+														<FormItem className="flex items-center space-x-1 space-y-0">
+															<FormControl>
+																<RadioGroupItem value="0" />
+															</FormControl>
+															<FormLabel
+																className={`${field.value === "0" ? "font-bold" : "font-normal"}`}
+															>
+																禁用
+															</FormLabel>
+														</FormItem>
+													</RadioGroup>
+												</FormControl>
 											</FormItem>
 										)}
 									/>
@@ -1398,7 +1501,6 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 									)}
 								/>
 							)}
-
 						</div>
 					</Form>
 				)}

@@ -17,5 +17,5 @@ export interface SelectStgFormProps {
 	name: string
 	submitText?: string
 	defaultValues?: Partial<SelectStgFormData>
-	onSave: (data: Omit<SelectStgFormData, "split_order_amount">) => void
+	onSave: (data: SelectStgFormData) => void
 }
