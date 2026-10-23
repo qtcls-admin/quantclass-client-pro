@@ -18,6 +18,7 @@ import { kernelLogIPC } from "./kernel-log/index.js"
 import { migrationIPC } from "./migration/index.js"
 import { notificationIPC } from "./notification/index.js"
 import { realTradingBackupIPC } from "./real-trading-backup/index.js"
+import { rebalanceTimeIPC } from "./rebalance-time/index.js"
 import { repoIPC } from "./repo/index.js"
 import { startupCheckIPC } from "./startup-check/index.js"
 import { storeIPC } from "./store/index.js"
@@ -36,6 +37,7 @@ if (process.contextIsolated) {
 		contextBridge.exposeInMainWorld("electronAPI", {
 			...coreIPC,
 			...storeIPC,
+			...rebalanceTimeIPC,
 			...dataIPC,
 			...strategyIPC,
 			...fileSysIPC,

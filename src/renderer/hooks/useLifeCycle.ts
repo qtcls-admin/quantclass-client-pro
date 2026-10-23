@@ -30,13 +30,16 @@ import {
 	isAutoLoginAtom,
 	reTimingAtom,
 	planXConfigAtom,
+	rebTimeConfigAtom,
 	realMarketConfigSchemaAtom,
 } from "@/renderer/store/storage"
 import { qmtConnectOkAtom } from "@/renderer/store/rocket-visible"
 import { macAddressAtom, userAtom } from "@/renderer/store/user"
 import { useLocalVersions, versionsEffectAtom } from "@/renderer/store/versions"
 import { checkPermission } from "@/shared/lib/permission"
+import type { PosStrategyType, SelectStgType } from "@/renderer/types/strategy"
 import type { AccountsConfigMap } from "@/shared/types/qmt-accounts"
+import type { RebTimeConfig } from "@/shared/types/reb-time-config.js"
 import { useMount, useUnmount, useUpdateEffect } from "etc-hooks"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { toast } from "sonner"
@@ -50,6 +53,7 @@ const {
 	unSubscribeSendScheduleStatusListener,
 	getMacAddress,
 	setAutoLaunch,
+	getRebalanceTimeConfig,
 	getStoreValue,
 	getUserAccount,
 	setStoreValue,
@@ -87,6 +91,7 @@ export const useLifeCycle = () => {
 		setQmtConnectOk: useSetAtom(qmtConnectOkAtom),
 		setBacktestConfig: useSetAtom(backtestConfigAtom),
 		setReTiming: useSetAtom(reTimingAtom),
+		setRebTimeConfig: useSetAtom(rebTimeConfigAtom),
 	}
 
 	// -- 用于保存休眠前的更新状态
@@ -96,6 +101,16 @@ export const useLifeCycle = () => {
 	 * -- 初始化定时任务
 	 */
 	const initScheduleTask = async () => {
+		const rebTimeFromStore = await getRebalanceTimeConfig()
+		if (Object.keys(rebTimeFromStore).length > 0) {
+			setters.setRebTimeConfig(
+				rebTimeFromStore as Record<
+					string,
+					RebTimeConfig<SelectStgType | PosStrategyType>
+				>,
+			)
+		}
+
 		const realMarketConfig = await getStoreValue("real_market_config", {
 			filter_kcb: true,
 			filter_cyb: true,

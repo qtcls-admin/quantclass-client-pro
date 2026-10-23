@@ -14,7 +14,6 @@ import type {
 	BasicSelectStgSchema,
 	BasicTimingStgSchema,
 } from "@/shared/schemas/basic-strategy.js"
-import type { TimeValue } from "react-aria"
 import type { z } from "zod"
 
 export type BasicSelectStgType = z.infer<typeof BasicSelectStgSchema>
@@ -60,11 +59,4 @@ export type PosStrategyType = {
 	isFold: boolean
 	re_timing?: ReTimingType
 	remark_name?: string
-}
-
-// 换仓时间配置类型
-export interface RebTimeConfig {
-	sell_time: TimeValue
-	buy_time: TimeValue
-	strategies: (SelectStgType | PosStrategyType)[] // 使用此 rebalance_time 的策略列表
 }

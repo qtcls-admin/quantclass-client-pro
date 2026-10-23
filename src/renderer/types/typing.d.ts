@@ -27,6 +27,8 @@ type NotificationIPC =
 type RealTradingBackupIPC =
 	typeof import("@/preload/real-trading-backup/index.js").realTradingBackupIPC
 type RepoIPC = typeof import("@/preload/repo/index.js").repoIPC
+type RebalanceTimeIPC =
+	typeof import("@/preload/rebalance-time/index.js").rebalanceTimeIPC
 type StartupCheckIPC =
 	typeof import("@/preload/startup-check/index.js").startupCheckIPC
 
@@ -45,6 +47,7 @@ type CustomElectronAPI = SystemIPC &
 	NotificationIPC &
 	RealTradingBackupIPC &
 	RepoIPC &
+	RebalanceTimeIPC &
 	StartupCheckIPC
 
 interface Versions {

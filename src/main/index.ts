@@ -42,6 +42,7 @@ import { regNotificationIPC } from "@/preload/notification/notification-ipc.js"
 import { regRealTradingBackupIPC } from "@/preload/real-trading-backup/real-trading-backup-ipc.js"
 import { regRepoIPC } from "@/preload/repo/repo-ipc.js"
 import { regStartupCheckIPC } from "@/preload/startup-check/startup-check-ipc.js"
+import { regRebalanceTimeIPC } from "@/preload/rebalance-time/rebalance-time-ipc.js"
 import { regStoreIPC } from "@/preload/store/store-ipc.js"
 import { regStrategyIPC } from "@/preload/strategy/strategy-ipc.js"
 import { regSystemIPC } from "@/preload/system/system-ipc.js"
@@ -118,6 +119,7 @@ if (!gotTheLock) {
 		regAuthIPC()
 		regCoreIPC()
 		regStoreIPC()
+		regRebalanceTimeIPC()
 		regSystemIPC()
 		regFileSysIPC()
 		regKernelLogIPC()

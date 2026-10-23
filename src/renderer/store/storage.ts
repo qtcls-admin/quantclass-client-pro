@@ -8,7 +8,8 @@
  * See the LICENSE file and https://mariadb.com/bsl11/
  */
 import type { RealMarketConfigSchema } from "@/renderer/page/trading/config-form"
-import type { BasicStgType, RebTimeConfig } from "@/renderer/types/strategy"
+import type { BasicStgType, PosStrategyType, SelectStgType } from "@/renderer/types/strategy"
+import type { RebTimeConfig } from "@/shared/types/reb-time-config.js"
 import { atom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
 import type { z } from "zod"
@@ -89,7 +90,9 @@ export const fusionAtom = atomWithStorage<any[]>("fusion", [], undefined, {
 })
 
 // 换仓时间配置，按 rebalance_time 分组
-export const rebTimeConfigAtom = atomWithStorage<Record<string, RebTimeConfig>>(
+export const rebTimeConfigAtom = atomWithStorage<
+	Record<string, RebTimeConfig<SelectStgType | PosStrategyType>>
+>(
 	"rebTimeConfig",
 	{},
 	undefined,

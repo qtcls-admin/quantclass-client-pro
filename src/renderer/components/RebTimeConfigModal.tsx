@@ -34,11 +34,8 @@ import {
 	rebTimeConfigAtom,
 } from "@/renderer/store/storage"
 import { userAtom } from "@/renderer/store/user"
-import type {
-	PosStrategyType,
-	RebTimeConfig,
-	SelectStgType,
-} from "@/renderer/types/strategy"
+import type { PosStrategyType, SelectStgType } from "@/renderer/types/strategy"
+import type { RebTimeConfig } from "@/shared/types/reb-time-config.js"
 import { regenerateRebTime } from "@/renderer/utils/strategy"
 import { checkPermission } from "@/shared/lib/permission"
 import { useAtom, useAtomValue } from "jotai"
@@ -166,6 +163,7 @@ function RebTimeConfigBody() {
 		try {
 			const newRebTimeConfig = regenerateRebTime(rebTimeConfig, rebTime)
 			setRebTimeConfig(newRebTimeConfig)
+			await window.electronAPI.setRebalanceTimeConfig(newRebTimeConfig)
 			toast.success(`已重新生成 "${rebTime}" 的换仓时间`)
 		} catch (error) {
 			console.error("重新生成换仓时间失败:", error)
@@ -175,7 +173,10 @@ function RebTimeConfigBody() {
 		}
 	}
 
-	const rebTimeEntries = useMemo((): [string, RebTimeConfig][] => {
+	const rebTimeEntries = useMemo((): [
+		string,
+		RebTimeConfig<SelectStgType | PosStrategyType>,
+	][] => {
 		if (isMember) {
 			return Object.entries(rebTimeConfig)
 		}
@@ -187,8 +188,12 @@ function RebTimeConfigBody() {
 			return [
 				rebTime,
 				{
-					sell_time: undefined as unknown as RebTimeConfig["sell_time"],
-					buy_time: undefined as unknown as RebTimeConfig["buy_time"],
+					sell_time: undefined as unknown as RebTimeConfig<
+						SelectStgType | PosStrategyType
+					>["sell_time"],
+					buy_time: undefined as unknown as RebTimeConfig<
+						SelectStgType | PosStrategyType
+					>["buy_time"],
 					strategies: [],
 				},
 			]

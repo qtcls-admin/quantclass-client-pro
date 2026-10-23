@@ -12,19 +12,19 @@ import type { StrategyRuntimeConfig } from "@/renderer/store/storage"
 import type {
 	BasicStgType,
 	PosStrategyType,
-	RebTimeConfig,
 	SelectStgType,
 	StgGroupType,
 } from "@/renderer/types/strategy"
+import type { RebTimeConfig } from "@/shared/types/reb-time-config.js"
 import { STOCK_QUANT_STRATEGY_CONFIG } from "@/shared/constants"
 import { buildStockQuantPayload } from "@/shared/lib/basic-strategy-import"
 import { autoTradeTimeByRebTime } from "./trade"
 
-const { setStoreValue } = window.electronAPI
+const { setStoreValue, setRebalanceTimeConfig } = window.electronAPI
 
 // 写入每个策略的rebalance_time的rebTimeConfig，若rebTime不存在则先创建
 const addStrategyToRebTimeConfig = (
-	rebTimeConfig: Record<string, RebTimeConfig>,
+	rebTimeConfig: Record<string, RebTimeConfig<SelectStgType | PosStrategyType>>,
 	rebTime: string,
 	strategy: BasicStgType | SelectStgType | PosStrategyType,
 ): void => {
@@ -96,9 +96,9 @@ const collectFusionRuntimeNames = (
  * @returns 更新后的 rebTimeConfig
  */
 export const regenerateRebTime = (
-	rebTimeConfig: Record<string, RebTimeConfig>,
+	rebTimeConfig: Record<string, RebTimeConfig<SelectStgType | PosStrategyType>>,
 	rebTime: string,
-): Record<string, RebTimeConfig> => {
+): Record<string, RebTimeConfig<SelectStgType | PosStrategyType>> => {
 	const { sell_time, buy_time } = autoTradeTimeByRebTime(rebTime)
 	const strategies = rebTimeConfig[rebTime]?.strategies ?? []
 
@@ -152,7 +152,7 @@ const genSelectStgInfo = (
 
 export const saveStockQuantStrategies = async (
 	strategies: BasicStgType[],
-	existingRebTimeConfig?: Record<string, RebTimeConfig>,
+	existingRebTimeConfig?: Record<string, RebTimeConfig<SelectStgType | PosStrategyType>>,
 	existingRuntimeConfig?: Record<string, StrategyRuntimeConfig>,
 ) => {
 	const strategiesWithAdjustedWeight = strategies.map((strategy) => ({
@@ -162,7 +162,7 @@ export const saveStockQuantStrategies = async (
 			: {}),
 	}))
 
-	const rebTimeConfig: Record<string, RebTimeConfig> = {}
+	const rebTimeConfig: Record<string, RebTimeConfig<SelectStgType | PosStrategyType>> = {}
 
 	if (existingRebTimeConfig) {
 		for (const [rebTime, config] of Object.entries(existingRebTimeConfig)) {
@@ -195,6 +195,7 @@ export const saveStockQuantStrategies = async (
 
 	if (selectStrategyList.length === 0) {
 		await setStoreValue(STOCK_QUANT_STRATEGY_CONFIG, {})
+		await setRebalanceTimeConfig(rebTimeConfig)
 		return { rebTimeConfig, strategyRuntimeConfig }
 	}
 
@@ -203,13 +204,14 @@ export const saveStockQuantStrategies = async (
 		await setStoreValue(STOCK_QUANT_STRATEGY_CONFIG, payload)
 	}
 
+	await setRebalanceTimeConfig(rebTimeConfig)
 	return { rebTimeConfig, strategyRuntimeConfig }
 }
 
 // 仓位管理生成dict
 export const saveStrategyListFusion = async (
 	fusionStrategies: (SelectStgType | StgGroupType | PosStrategyType)[],
-	existingRebTimeConfig?: Record<string, RebTimeConfig>,
+	existingRebTimeConfig?: Record<string, RebTimeConfig<SelectStgType | PosStrategyType>>,
 	existingRuntimeConfig?: Record<string, StrategyRuntimeConfig>,
 ) => {
 	/**
@@ -271,7 +273,7 @@ export const saveStrategyListFusion = async (
 	)
 	await setStoreValue("pos_mgmt.strategies", selectStrategyList)
 
-	const rebTimeConfig: Record<string, RebTimeConfig> = {}
+	const rebTimeConfig: Record<string, RebTimeConfig<SelectStgType | PosStrategyType>> = {}
 
 	if (existingRebTimeConfig) {
 		for (const [rebTime, config] of Object.entries(existingRebTimeConfig)) {
@@ -317,6 +319,7 @@ export const saveStrategyListFusion = async (
 		existingRuntimeConfig,
 	)
 
+	await setRebalanceTimeConfig(rebTimeConfig)
 	return { rebTimeConfig, strategyRuntimeConfig }
 }
 
