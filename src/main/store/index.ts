@@ -14,6 +14,13 @@ import { app } from "electron"
 import Store from "electron-store"
 
 const store = new Store()
+// -- 旧 rocket 读取策略配置
+export const rStore = new Store({ name: "real_market_25" })
+
+const realMarketOld = path.join(app.getPath("userData"), "real_market.json")
+if (fs.existsSync(realMarketOld)) {
+	fs.unlinkSync(realMarketOld)
+}
 
 export const CONFIG_PATH = path.join(app.getPath("userData"), "config.json")
 export const EXEC_FUEL_PATH = path.join(app.getPath("userData"), "fuel")

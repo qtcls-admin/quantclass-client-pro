@@ -850,68 +850,8 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 							</div>
 						</div>
 
-						<div className="grid grid-cols-2 items-start gap-4 gap-y-6">
-							<FormField
-								name="message_robot_url"
-								control={form.control}
-								render={({ field }) => (
-									<FormItem className="flex flex-col gap-2">
-										<FormLabel className="flex min-h-14 items-end leading-snug">
-											<span>
-												消息机器人 URL{" "}
-												<span className="text-xs text-muted-foreground">
-													机器人配置参考：
-												</span>
-												<span
-													onKeyDown={(e) => {
-														if (e.key === "Enter" || e.key === " ") {
-															e.preventDefault()
-														}
-													}}
-													onClick={() =>
-														openUrl("https://bbs.quantclass.cn/thread/10975")
-													}
-													className="underline cursor-pointer hover:no-underline text-xs"
-												>
-													quantclass/10975
-												</span>
-											</span>
-										</FormLabel>
-										<FormControl>
-											<Input
-												{...field}
-												className="h-10 w-full"
-												placeholder="可以不填..."
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								name="date_start"
-								control={form.control}
-								render={({ field }) => (
-									<FormItem className="flex flex-col gap-2">
-										<FormLabel className="flex min-h-14 items-end leading-snug">
-											<span>
-												计算起始日期 <span className="text-destructive">*</span>
-												<span className="text-xs text-muted-foreground">
-													运行选股的起始日期，一般参数越大需要越久的日期
-												</span>
-											</span>
-										</FormLabel>
-										<FormControl>
-											<DatePicker
-												{...field}
-												disableFutureDates
-												className="h-10 w-full"
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+						<div className="flex flex-col gap-6">
+							<div className="grid grid-cols-2 items-start gap-4">
 							<FormField
 								name="split_order_amount"
 								control={form.control}
@@ -922,7 +862,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 									const is3X = multiplier === 3
 									return (
 										<FormItem className="flex flex-col gap-2">
-											<FormLabel className="flex min-h-10 items-end gap-1 leading-snug">
+											<FormLabel className="flex min-h-14 items-end gap-1 leading-snug">
 												<span>拆单金额</span>
 												<span className="text-destructive">*</span>
 												<ButtonTooltip
@@ -968,7 +908,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 													随机
 												</Button>
 												{/* 倍数切换 */}
-												<div className="flex shrink-0 items-center rounded-lg border bg-muted/40 p-0.5">
+												<div className="flex h-10 shrink-0 items-stretch rounded-lg border bg-muted/40 p-1">
 													{(["1", "3"] as const).map((m) => (
 														<button
 															key={m}
@@ -979,7 +919,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 																// 切换后自动重置拆单金额，避免旧值超出新范围
 																form.setValue("split_order_amount", "")
 															}}
-															className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all focus-visible:outline-none ${
+															className={`flex min-w-10 items-center justify-center rounded-md px-3.5 text-sm font-semibold transition-all focus-visible:outline-none disabled:opacity-50 ${
 																multiplierStr === m
 																	? "bg-neutral-950 text-white shadow-sm dark:bg-neutral-100 dark:text-neutral-950"
 																	: "text-muted-foreground hover:text-foreground"
@@ -994,7 +934,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 												<div className="animate-pulse flex items-center gap-2 rounded-lg border border-amber-300/80 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-400">
 													<TriangleAlert className="h-3.5 w-3.5 shrink-0" />
 													<span>
-														3X 拆单金额较大（18000～36000），可能会导致
+														3X 拆单金额较大，可能会导致
 														<span className="font-semibold">滑点过大</span>
 														，请谨慎使用
 													</span>
@@ -1006,11 +946,88 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 								}}
 							/>
 							<FormField
+								name="date_start"
+								control={form.control}
+								render={({ field }) => (
+									<FormItem className="flex flex-col gap-2">
+										<FormLabel className="flex min-h-14 items-end leading-snug">
+											<span>
+												计算起始日期 <span className="text-destructive">*</span>
+												<span className="text-xs text-muted-foreground">
+													运行选股的起始日期，一般参数越大需要越久的日期
+												</span>
+											</span>
+										</FormLabel>
+										<FormControl>
+											<DatePicker
+												{...field}
+												disableFutureDates
+												className="h-10 w-full"
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							</div>
+							<div className="grid grid-cols-2 items-start gap-4">
+							<div className="flex min-w-0 flex-col gap-2">
+							<FormField
+								name="message_robot_url"
+								control={form.control}
+								render={({ field }) => (
+									<FormItem className="flex flex-col gap-2">
+										<FormLabel className="flex min-h-14 items-end leading-snug">
+											<span>
+												消息机器人 URL{" "}
+												<span className="text-xs text-muted-foreground">
+													机器人配置参考：
+												</span>
+												<span
+													onKeyDown={(e) => {
+														if (e.key === "Enter" || e.key === " ") {
+															e.preventDefault()
+														}
+													}}
+													onClick={() =>
+														openUrl("https://bbs.quantclass.cn/thread/10975")
+													}
+													className="underline cursor-pointer hover:no-underline text-xs"
+												>
+													quantclass/10975
+												</span>
+											</span>
+										</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												className="h-10 w-full"
+												placeholder="可以不填..."
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							{isMember && (
+								<Button
+									type="button"
+									size="sm"
+									variant="outline"
+									className="w-fit text-destructive hover:text-destructive"
+									onClick={() => setFactorCacheConfirmOpen(true)}
+								>
+									<Trash2 className="mr-2 size-4" />
+									清除因子缓存
+								</Button>
+							)}
+							</div>
+							<FormField
 								name="reverse_repo_keep"
 								control={form.control}
 								render={({ field, formState }) => (
 									<FormItem className="flex flex-col gap-2">
-										<FormLabel className="flex min-h-10 items-end gap-1 leading-snug">
+										<FormLabel className="flex min-h-14 items-end gap-1 leading-snug">
 											<span className="flex flex-wrap items-center gap-1">
 												<span>逆回购保留金额</span>
 												<span className="text-xs text-muted-foreground">
@@ -1048,20 +1065,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 									</FormItem>
 								)}
 							/>
-							{isMember && (
-								<FormItem className="space-y-2">
-									<Button
-										type="button"
-										size="sm"
-										variant="outline"
-										className="w-fit text-destructive hover:text-destructive"
-										onClick={() => setFactorCacheConfirmOpen(true)}
-									>
-										<Trash2 className="mr-2 size-4" />
-										清除因子缓存
-									</Button>
-								</FormItem>
-							)}
+							</div>
 						</div>
 					</form>
 					{renderFormActions({

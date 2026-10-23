@@ -10,6 +10,7 @@
 
 import windowManager from "@/main/lib/WindowManager.js"
 import { execBin } from "@/main/lib/process.js"
+import { writeRealMarket25 } from "@/main/lib/real-market-25.js"
 import { userStore } from "@/main/lib/userStore.js"
 import { loadTradingDaysFromPeriodOffsetCsv } from "@/main/utils/common.js"
 import {
@@ -146,11 +147,19 @@ const setupScheduler = async (): Promise<schedule.Job> => {
 			return
 		}
 
+		try {
+			await writeRealMarket25(userAccount.permissions)
+		} catch (error) {
+			logger.error(`[real_market_25] 写入失败: ${error}`)
+		}
+
 		// 2025-05-29，目前仍然只支持Windows系统下单，mac 上最多支持手动回测
 		const requireTrading = systemState.isSetAutoTrading && platform.isWindows
 
 		// -- 检查是否设置自动更新数据，如果设置了，唤醒 Rocket
-		if (requireTrading) await wakeUpRocket(userAccount, mw)
+		if (requireTrading) {
+			await wakeUpRocket(userAccount, mw)
+		}
 
 		const selectKernal = getSelectKernal(userAccount?.permissions ?? [])
 		if (
