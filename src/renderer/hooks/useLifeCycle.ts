@@ -32,6 +32,7 @@ import {
 	planXConfigAtom,
 	realMarketConfigSchemaAtom,
 } from "@/renderer/store/storage"
+import { qmtConnectOkAtom } from "@/renderer/store/rocket-visible"
 import { macAddressAtom, userAtom } from "@/renderer/store/user"
 import { useLocalVersions, versionsEffectAtom } from "@/renderer/store/versions"
 import { checkPermission } from "@/shared/lib/permission"
@@ -83,6 +84,7 @@ export const useLifeCycle = () => {
 		setAccountKey: useSetAtom(accountKeyAtom),
 		setRealMarketConfig: useSetAtom(realMarketConfigSchemaAtom),
 		setPlanXConfig: useSetAtom(planXConfigAtom),
+		setQmtConnectOk: useSetAtom(qmtConnectOkAtom),
 		setBacktestConfig: useSetAtom(backtestConfigAtom),
 		setReTiming: useSetAtom(reTimingAtom),
 	}
@@ -112,6 +114,8 @@ export const useLifeCycle = () => {
 		})
 		const accounts = ((await getStoreValue("accounts", {})) ??
 			{}) as AccountsConfigMap
+		const qmtConnectOk = await getStoreValue("qmt_connect_ok", false)
+		setters.setQmtConnectOk(qmtConnectOk === true)
 
 		if (realMarketConfig && isWindows) {
 			const qmtMode =

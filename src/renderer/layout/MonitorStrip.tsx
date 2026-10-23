@@ -15,6 +15,7 @@
 // 	TRADING_SECTION_ROUTE,
 // } from "@/renderer/constant"
 import { useAppVersions } from "@/renderer/hooks/useAppVersion"
+import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 // import { useProductList } from "@/renderer/hooks/useProductList"
 import { useTradingSession } from "@/renderer/hooks/useTradingSession"
 import { useVersionCheck } from "@/renderer/hooks/useVersionCheck"
@@ -75,6 +76,7 @@ function getSystemKernelVersionUpdateLevel(
 		  }
 		| undefined,
 	selectKernal: "fusion" | "aqua",
+	rocketVisible: boolean,
 ): KernelVersionUpdateLevel {
 	const selectVersionKey =
 		selectKernal === "fusion" ? "fusionVersion" : "aquaVersion"
@@ -91,13 +93,15 @@ function getSystemKernelVersionUpdateLevel(
 		),
 	]
 
-	levels.push(
-		getKernelVersionUpdateLevel(
-			localVersions?.rocketVersion,
-			appVersions?.latest?.rocket,
-			appVersions?.rocket ?? [],
-		),
-	)
+	if (rocketVisible) {
+		levels.push(
+			getKernelVersionUpdateLevel(
+				localVersions?.rocketVersion,
+				appVersions?.latest?.rocket,
+				appVersions?.rocket ?? [],
+			),
+		)
+	}
 
 	return mergeKernelVersionUpdateLevels(levels)
 }
@@ -153,6 +157,7 @@ export function MonitorStrip() {
 	// const setActiveTab = useSetAtom(activeTabAtom)
 	const { appVersions } = useAppVersions()
 	const { hasClientUpdate } = useVersionCheck()
+	const rocketVisible = useRocketVisible()
 	const localVersions = useAtomValue(versionsAtom)
 	const { permissions } = useAtomValue(userAtom)
 	const selectKernal = getSelectKernal(permissions)
@@ -166,8 +171,9 @@ export function MonitorStrip() {
 				appVersions,
 				localVersions,
 				selectKernal,
+				rocketVisible,
 			),
-		[appVersions, localVersions, selectKernal],
+		[appVersions, localVersions, selectKernal, rocketVisible],
 	)
 
 	const systemLevel = useMemo(() => {
