@@ -8,12 +8,7 @@
  * See the LICENSE file and https://mariadb.com/bsl11/
  */
 
-import { atomWithStorage } from "jotai/utils"
+import { atom } from "jotai"
 
 /** QMT 连通性自检是否通过 */
-export const qmtConnectOkAtom = atomWithStorage<boolean>(
-	"qmtConnectOk",
-	false,
-	undefined,
-	{ getOnInit: true },
-)
+export const qmtConnectOkAtom = atom<boolean>(false)
