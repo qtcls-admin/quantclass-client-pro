@@ -36,6 +36,8 @@ import {
 import { macAddressAtom, userAtom } from "@/renderer/store/user"
 import { useLocalVersions, versionsEffectAtom } from "@/renderer/store/versions"
 import type { PosStrategyType, SelectStgType } from "@/renderer/types/strategy"
+import { loadSelectStockMigrationSnapshot } from "@/renderer/utils/migrate-select-stock-to-pos-mgmt"
+import { requestSelectStockMigration } from "@/renderer/utils/select-stock-migration-gate"
 import {
 	type SplitOrderMultiplier,
 	parseSplitOrderAmount,
@@ -61,6 +63,7 @@ const {
 	setRebalanceTimeConfig,
 	getStoreValue,
 	getUserAccount,
+	rendererLog,
 	setStoreValue,
 } = window.electronAPI
 
@@ -337,6 +340,20 @@ export const useLifeCycle = () => {
 			: false
 
 		await initBacktestConfig(isMember)
+
+		if (isMember) {
+			try {
+				const snapshot = await loadSelectStockMigrationSnapshot()
+				if (snapshot) {
+					await requestSelectStockMigration(snapshot)
+				}
+			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error)
+				rendererLog("error", `[select-stock-migration] 检查失败：${message}`)
+				toast.error("策略库迁移检查失败，请重启客户端后重试")
+				return
+			}
+		}
 
 		onPowerStatus(handlePowerStatusChange)
 		subscribeScheduleStatus(

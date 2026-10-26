@@ -46,7 +46,6 @@ export const systemIPC = {
 	getMacAddress: () => ipcRenderer.invoke("get-mac-address"),
 	getMachineId: () => ipcRenderer.invoke("get-machine-id") as Promise<string>,
 	// 检查内核是否运行
-	checkKernalRunning: (
-		kernals: KernalType[] = ["rocket"],
-	) => ipcRenderer.invoke("check-kernal-running", kernals) as Promise<boolean>,
+	checkKernalRunning: (kernals: KernalType[] = ["rocket"]) =>
+		ipcRenderer.invoke("check-kernal-running", kernals) as Promise<boolean>,
 }

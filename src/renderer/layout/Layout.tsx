@@ -20,10 +20,7 @@ import {
 	useRouterGuard,
 } from "@/renderer/hooks"
 
-import {
-	isFullscreenAtom,
-	loadingAnimeAtom,
-} from "@/renderer/store"
+import { isFullscreenAtom, loadingAnimeAtom } from "@/renderer/store"
 import {
 	ciccBseNoticeDismissedAtom,
 	realMarketConfigSchemaAtom,
@@ -43,6 +40,7 @@ import { useReportErr } from "./hooks/useReportErr"
 
 import { CapWeightMigrateHandler } from "@/renderer/components/CapWeightMigrateHandler"
 import { CiccBseNoticeDialog } from "@/renderer/components/CiccBseNoticeDialog"
+import { SelectStockMigrateHandler } from "@/renderer/components/SelectStockMigrateHandler"
 import { StartupCheckLauncher } from "@/renderer/components/StartupCheckLauncher"
 import { AlertDialogProvider } from "@/renderer/context/alert-dialog"
 import VersionUpgrade from "@/renderer/layout/version-upgrade"
@@ -110,6 +108,7 @@ const Layout: FC = () => {
 			<VersionUpgrade />
 			<RealConfigDialog />
 			<CapWeightMigrateHandler />
+			<SelectStockMigrateHandler />
 			<CiccBseNoticeDialog
 				open={showCiccNotice}
 				onOpenChange={setShowCiccNotice}

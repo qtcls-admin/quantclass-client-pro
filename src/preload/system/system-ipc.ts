@@ -82,10 +82,7 @@ function handleMonitorProcess() {
 function handleCheckKernalRunning() {
 	ipcMain.handle(
 		"check-kernal-running",
-		async (
-			_event,
-			kernals: KernalType[] = ["rocket"],
-		) => {
+		async (_event, kernals: KernalType[] = ["rocket"]) => {
 			const { isAnyKernalBusy } = await import("@/main/utils/tools.js")
 			return await isAnyKernalBusy(kernals)
 		},
