@@ -23,7 +23,7 @@ import { useHotkeys } from "@/renderer/hooks/useHotkeys"
 import { useRealMarketConfig } from "@/renderer/hooks/useRealMarketConfig"
 import { useRocketVisible } from "@/renderer/hooks/useRocketVisible"
 import { isLogModalOpenAtom, isShowMonitorPanelAtom } from "@/renderer/store"
-import { planXConfigAtom } from "@/renderer/store/storage"
+import { usePlanXAccount } from "@/renderer/hooks/usePlanXAccount"
 import { userAtom } from "@/renderer/store/user"
 import { getSelectKernal } from "@/shared/lib/permission"
 import { useAtom, useAtomValue } from "jotai"
@@ -46,11 +46,11 @@ export function LogMenuButton() {
 	const rocketVisible = useRocketVisible()
 	const { permissions } = useAtomValue(userAtom)
 	const selectKernal = getSelectKernal(permissions)
-	const planXConfig = useAtomValue(planXConfigAtom)
+	const planXAccount = usePlanXAccount()
 	const qmtFolderPath =
 		realMarketConfig.qmt_mode === "planA"
 			? realMarketConfig.qmt_path
-			: planXConfig.qmt_path
+			: planXAccount.qmt_path
 	const [isLogModalOpen, setIsLogModalOpen] = useAtom(isLogModalOpenAtom)
 	const [isShowMonitorPanel, setIsShowMonitorPanel] = useAtom(
 		isShowMonitorPanelAtom,

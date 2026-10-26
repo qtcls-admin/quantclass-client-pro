@@ -26,9 +26,9 @@ import {
 import { qmtConnectOkAtom } from "@/renderer/store/rocket-visible"
 import {
 	accountKeyAtom,
+	accountsAtom,
 	backtestConfigAtom,
 	isAutoLoginAtom,
-	planXConfigAtom,
 	reTimingAtom,
 	realMarketConfigSchemaAtom,
 	rebTimeConfigAtom,
@@ -109,7 +109,7 @@ export const useLifeCycle = () => {
 		setIsFullscreen: useSetAtom(isFullscreenAtom),
 		setAccountKey: useSetAtom(accountKeyAtom),
 		setRealMarketConfig: useSetAtom(realMarketConfigSchemaAtom),
-		setPlanXConfig: useSetAtom(planXConfigAtom),
+		setAccounts: useSetAtom(accountsAtom),
 		setQmtConnectOk: useSetAtom(qmtConnectOkAtom),
 		setBacktestConfig: useSetAtom(backtestConfigAtom),
 		setReTiming: useSetAtom(reTimingAtom),
@@ -175,6 +175,8 @@ export const useLifeCycle = () => {
 		}
 		const accounts = ((await getStoreValue("accounts", {})) ??
 			{}) as AccountsConfigMap
+		setters.setAccounts(accounts)
+
 		const qmtConnectOk = await getStoreValue("qmt_connect_ok", false)
 		setters.setQmtConnectOk(qmtConnectOk === true)
 
@@ -206,16 +208,6 @@ export const useLifeCycle = () => {
 					| "PERFORMANCE"
 					| "ECONOMY",
 			}))
-			setters.setPlanXConfig((prev) => {
-				const accountId = prev.account_id ?? ""
-				const accountCfg = accountId ? accounts[accountId] : undefined
-				return {
-					account_id: accountId,
-					qmt_path: accountCfg?.qmt_path ?? prev.qmt_path ?? "",
-					exported_dir: accountCfg?.exported_dir ?? prev.exported_dir ?? "",
-					copy_paste_optimize: accountCfg?.copy_paste_optimize ?? false,
-				}
-			})
 		}
 	}
 

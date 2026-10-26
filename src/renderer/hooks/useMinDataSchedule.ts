@@ -10,10 +10,8 @@
 
 import { isMinDataUpdatingAtom, minDataModeAtom } from "@/renderer/store"
 import { usePermissionCheck } from "@/renderer/hooks/usePermissionCheck"
-import {
-	planXConfigAtom,
-	realMarketConfigSchemaAtom,
-} from "@/renderer/store/storage"
+import { usePlanXAccount } from "@/renderer/hooks/usePlanXAccount"
+import { realMarketConfigSchemaAtom } from "@/renderer/store/storage"
 import { useAtomValue, useSetAtom } from "jotai"
 import { useCallback, useMemo } from "react"
 import { toast } from "sonner"
@@ -23,7 +21,7 @@ const { toggleMinDataSchedule } = window.electronAPI
 export function useMinDataSchedule() {
 	const mode = useAtomValue(minDataModeAtom)
 	const realMarketConfig = useAtomValue(realMarketConfigSchemaAtom)
-	const planXConfig = useAtomValue(planXConfigAtom)
+	const planXAccount = usePlanXAccount()
 	const setIsMinDataUpdating = useSetAtom(isMinDataUpdatingAtom)
 	const { checkWithToast } = usePermissionCheck()
 
@@ -35,17 +33,17 @@ export function useMinDataSchedule() {
 			)
 		}
 		return (
-			!!planXConfig.account_id?.trim() &&
-			!!planXConfig.qmt_path?.trim() &&
-			!!planXConfig.exported_dir?.trim()
+			!!planXAccount.account_id.trim() &&
+			!!planXAccount.qmt_path.trim() &&
+			!!planXAccount.exported_dir.trim()
 		)
 	}, [
 		realMarketConfig?.account_id,
 		realMarketConfig?.qmt_path,
 		realMarketConfig?.qmt_mode,
-		planXConfig.account_id,
-		planXConfig.qmt_path,
-		planXConfig.exported_dir,
+		planXAccount.account_id,
+		planXAccount.qmt_path,
+		planXAccount.exported_dir,
 	])
 
 	const startMinDataSchedule = useCallback(

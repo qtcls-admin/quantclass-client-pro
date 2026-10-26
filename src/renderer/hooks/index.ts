@@ -21,6 +21,7 @@ import { useMinDataSchedule } from "./useMinDataSchedule"
 import { useNetInterval } from "./useNetInterval"
 import { useNetworkToast } from "./useNetworkToast"
 import { usePermissionCheck } from "./usePermissionCheck"
+import { usePlanXAccount } from "./usePlanXAccount"
 import { usePostUserAction } from "./usePostUserAction"
 import { useQueryVersion } from "./useQueryVersion"
 import { useRouterGuard } from "./useRouterGuard"
@@ -45,6 +46,7 @@ export {
 	useNetInterval,
 	useNetworkToast,
 	usePermissionCheck,
+	usePlanXAccount,
 	usePostUserAction,
 	useQueryVersion,
 	useRouterGuard,

@@ -33,14 +33,18 @@ import {
 import { Switch } from "@/renderer/components/ui/switch"
 import { TabsContent } from "@/renderer/components/ui/tabs"
 // import { ScrollArea } from "@/renderer/components/ui/scroll-area"
-import { usePermissionCheck, useToggleAutoRealTrading } from "@/renderer/hooks"
+import {
+	usePermissionCheck,
+	usePlanXAccount,
+	useToggleAutoRealTrading,
+} from "@/renderer/hooks"
 import { useRealMarketConfig } from "@/renderer/hooks/useRealMarketConfig"
 import { realConfigEditModalAtom } from "@/renderer/store"
 import { rocketStatusQueryAtom } from "@/renderer/store/query"
 import { qmtConnectOkAtom } from "@/renderer/store/rocket-visible"
 import {
+	accountsAtom,
 	ciccBseNoticeDismissedAtom,
-	planXConfigAtom,
 	realMarketConfigSchemaAtom,
 } from "@/renderer/store/storage"
 import { userAtom } from "@/renderer/store/user"
@@ -201,7 +205,8 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 	const [realMarketConfig, setRealMarketConfig] = useAtom(
 		realMarketConfigSchemaAtom,
 	)
-	const [planXConfig, setPlanXConfig] = useAtom(planXConfigAtom)
+	const planXAccount = usePlanXAccount()
+	const setAccounts = useSetAtom(accountsAtom)
 
 	const { setPerformanceMode } = useRealMarketConfig()
 
@@ -251,12 +256,12 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 
 	const planXDefaultValues = useMemo(
 		() => ({
-			account_id: planXConfig.account_id ?? "",
-			qmt_path: planXConfig.qmt_path ?? "",
-			exported_dir: planXConfig.exported_dir ?? "",
-			copy_paste_optimize: planXConfig.copy_paste_optimize ?? false,
+			account_id: planXAccount.account_id,
+			qmt_path: planXAccount.qmt_path,
+			exported_dir: planXAccount.exported_dir,
+			copy_paste_optimize: planXAccount.copy_paste_optimize,
 		}),
-		[planXConfig],
+		[planXAccount],
 	)
 
 	const form = useForm<FormData>({
@@ -284,28 +289,6 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 	const activeAccountId = isPlanA ? planAAccountId : planXAccountId
 	const isQmtCiccBroker =
 		getBrokerNameByAccountId(activeAccountId ?? "") === "中金"
-	useEffect(() => {
-		if (isPlanA) return
-
-		const id = planXAccountId?.trim()
-		if (!id) {
-			planXForm.setValue("qmt_path", "")
-			planXForm.setValue("exported_dir", "")
-			planXForm.setValue("copy_paste_optimize", false)
-			return
-		}
-
-		void getStoreValue("accounts", {}).then((raw) => {
-			const accounts = (raw ?? {}) as AccountsConfigMap
-			const entry = accounts[id]
-			planXForm.setValue("qmt_path", entry?.qmt_path ?? "")
-			planXForm.setValue("exported_dir", entry?.exported_dir ?? "")
-			planXForm.setValue(
-				"copy_paste_optimize",
-				entry?.copy_paste_optimize ?? false,
-			)
-		})
-	}, [isPlanA, planXAccountId, planXForm])
 
 	useEffect(() => {
 		if (!isPlanA) {
@@ -340,59 +323,58 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 		return true
 	}
 
-	const persistQmtConfig = async () => {
-		const existing = ((await getStoreValue("real_market_config", {})) ??
-			{}) as Record<string, unknown>
-		const isPlanAMode = planAForm.getValues("qmt_mode") === "planA"
-
+	const persistPlanAQmtConfig = async () => {
 		if (isQmtCiccBroker) {
 			form.setValue("filter_bj", "1")
 		}
 
-		if (isPlanAMode) {
-			const values = planAForm.getValues()
-			await setStoreValue("real_market_config", {
-				...existing,
-				qmt_path: values.qmt_path,
-				account_id: values.account_id,
-				qmt_port: values.qmt_port,
-				qmt_mode: "planA",
-				ws_host: values.ws_host,
-				ws_port: values.ws_port,
-				...(isQmtCiccBroker ? { filter_bj: true } : {}),
-			})
-			setRealMarketConfig((prev) => ({
-				...prev,
-				...values,
-				qmt_mode: "planA",
-				...(isQmtCiccBroker ? { filter_bj: "1" } : {}),
-			}))
-			return
+		const existing = ((await getStoreValue("real_market_config", {})) ??
+			{}) as Record<string, unknown>
+		const values = planAForm.getValues()
+
+		await setStoreValue("real_market_config", {
+			...existing,
+			qmt_path: values.qmt_path,
+			account_id: values.account_id,
+			qmt_port: values.qmt_port,
+			qmt_mode: "planA",
+			ws_host: values.ws_host,
+			ws_port: values.ws_port,
+			...(isQmtCiccBroker ? { filter_bj: true } : {}),
+		})
+		setRealMarketConfig((prev) => ({
+			...prev,
+			...values,
+			qmt_mode: "planA",
+			...(isQmtCiccBroker ? { filter_bj: "1" } : {}),
+		}))
+	}
+
+	const persistPlanXQmtConfig = async () => {
+		if (isQmtCiccBroker) {
+			form.setValue("filter_bj", "1")
 		}
 
+		const existing = ((await getStoreValue("real_market_config", {})) ??
+			{}) as Record<string, unknown>
 		const values = planXForm.getValues()
 		const id = values.account_id.trim()
-		const accounts = ((await getStoreValue("accounts", {})) ??
-			{}) as AccountsConfigMap
-		const accountEntry: AccountsConfigMap[string] = {
-			qmt_path: values.qmt_path,
-			exported_dir: values.exported_dir,
-			copy_paste_optimize: values.copy_paste_optimize,
+		const nextAccounts: AccountsConfigMap = {
+			[id]: {
+				qmt_path: values.qmt_path,
+				exported_dir: values.exported_dir,
+				copy_paste_optimize: values.copy_paste_optimize,
+			},
 		}
-		await setStoreValue("accounts", {
-			...accounts,
-			[id]: accountEntry,
-		})
-		const planAQmt = planAForm.getValues()
+
+		await setStoreValue("accounts", nextAccounts)
+		setAccounts(nextAccounts)
+
 		await setStoreValue("real_market_config", {
 			...existing,
 			qmt_mode: "planX",
-			qmt_port: planAQmt.qmt_port,
-			ws_host: planAQmt.ws_host,
-			ws_port: planAQmt.ws_port,
 			...(isQmtCiccBroker ? { filter_bj: true } : {}),
 		})
-		setPlanXConfig(values)
 		setRealMarketConfig((prev) => ({
 			...prev,
 			qmt_mode: "planX",
@@ -504,7 +486,11 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 
 			if (!(await ensureQmtConfigValid())) return false
 
-			await persistQmtConfig()
+			if (isPlanA) {
+				await persistPlanAQmtConfig()
+			} else {
+				await persistPlanXQmtConfig()
+			}
 
 			const connectOk = await checkPlanAQmtConnectivityAfterSave()
 			if (!connectOk) return false
@@ -585,7 +571,11 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 							if (checkQmtOnStart) {
 								if (!(await ensureQmtConfigValid({ redirectOnFailure: true })))
 									return
-								await persistQmtConfig()
+								if (isPlanA) {
+									await persistPlanAQmtConfig()
+								} else {
+									await persistPlanXQmtConfig()
+								}
 							}
 							if (await handleToggleAutoRocket(true))
 								setRealConfigEditModal(false)

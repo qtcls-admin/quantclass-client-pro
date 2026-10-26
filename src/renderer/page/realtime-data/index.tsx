@@ -30,10 +30,8 @@ import {
 	minDataModeAtom,
 	realConfigEditModalAtom,
 } from "@/renderer/store"
-import {
-	planXConfigAtom,
-	realMarketConfigSchemaAtom,
-} from "@/renderer/store/storage"
+import { usePlanXAccount } from "@/renderer/hooks/usePlanXAccount"
+import { realMarketConfigSchemaAtom } from "@/renderer/store/storage"
 import { getBrokerNameByAccountId } from "@/renderer/utils/broker"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { CircleHelp, Play, RefreshCw, Settings, Trash2 } from "lucide-react"
@@ -84,7 +82,7 @@ const RealtimeData: FC = () => {
 	const [mode, setMode] = useAtom(minDataModeAtom)
 	const isMinDataUpdating = useAtomValue(isMinDataUpdatingAtom)
 	const realMarketConfig = useAtomValue(realMarketConfigSchemaAtom)
-	const planXConfig = useAtomValue(planXConfigAtom)
+	const planXAccount = usePlanXAccount()
 	const setRealConfigEditModal = useSetAtom(realConfigEditModalAtom)
 	const { isAutoRocket, handleToggleAutoRocket } = useToggleAutoRealTrading()
 	const { startMinDataSchedule, stopMinDataSchedule, syncMinDataSchedule } =
@@ -124,9 +122,9 @@ const RealtimeData: FC = () => {
 	const isPlanA = realMarketConfig?.qmt_mode === "planA"
 	const qmtAccountId = isPlanA
 		? realMarketConfig?.account_id
-		: planXConfig.account_id
-	const qmtPath = isPlanA ? realMarketConfig?.qmt_path : planXConfig.qmt_path
-	const exportedDir = planXConfig.exported_dir
+		: planXAccount.account_id
+	const qmtPath = isPlanA ? realMarketConfig?.qmt_path : planXAccount.qmt_path
+	const exportedDir = planXAccount.exported_dir
 	const isQmtConfigured = isPlanA
 		? !!qmtAccountId?.trim() && !!qmtPath?.trim()
 		: !!qmtAccountId?.trim() && !!qmtPath?.trim() && !!exportedDir?.trim()

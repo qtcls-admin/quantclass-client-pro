@@ -13,6 +13,7 @@ import type {
 	PosStrategyType,
 	SelectStgType,
 } from "@/renderer/types/strategy"
+import type { AccountsConfigMap } from "@/shared/types/qmt-accounts"
 import type { RebTimeConfig } from "@/shared/types/reb-time-config.js"
 import { atom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
@@ -162,22 +163,8 @@ export const realMarketConfigSchemaAtom = atomWithStorage<
 	{ getOnInit: true },
 )
 
-export const planXConfigAtom = atomWithStorage<{
-	account_id: string
-	qmt_path: string
-	exported_dir: string
-	copy_paste_optimize: boolean
-}>(
-	"planXConfig",
-	{
-		account_id: "",
-		qmt_path: "",
-		exported_dir: "",
-		copy_paste_optimize: false,
-	},
-	undefined,
-	{ getOnInit: true },
-)
+/** Plan X 账户配置，与 electron store 的 `accounts` 同步（内存快照，不写 localStorage） */
+export const accountsAtom = atom<AccountsConfigMap>({})
 
 export const showMoneyAtom = atomWithStorage<boolean>(
 	"showMoney",

@@ -58,5 +58,7 @@ export type { ClientNotification } from "./client-notification.js"
 
 export type {
 	AccountsConfigMap,
+	PlanXAccountView,
 	QmtAccountConfig,
 } from "./qmt-accounts.js"
+export { getPlanXAccountView } from "./qmt-accounts.js"

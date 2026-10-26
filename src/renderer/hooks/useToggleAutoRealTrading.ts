@@ -15,12 +15,14 @@ import {
 } from "@/renderer/store"
 import {
 	fusionAtom,
-	planXConfigAtom,
 	selectStgListAtom,
 } from "@/renderer/store/storage"
 import { userAtom } from "@/renderer/store/user"
 import { checkPermission } from "@/shared/lib/permission"
-import type { AccountsConfigMap } from "@/shared/types/qmt-accounts"
+import {
+	type AccountsConfigMap,
+	getPlanXAccountView,
+} from "@/shared/types/qmt-accounts"
 import type {
 	PosStrategyType,
 	SelectStgType,
@@ -39,7 +41,6 @@ export const useToggleAutoRealTrading = () => {
 	const fusion = useAtomValue(fusionAtom)
 	const { permissions } = useAtomValue(userAtom)
 	const isMember = checkPermission(permissions, "isMember")
-	const planXConfig = useAtomValue(planXConfigAtom)
 
 	const { setAutoTrading, getStoreValue, setStoreValue, killRocket } =
 		window.electronAPI
@@ -108,15 +109,14 @@ export const useToggleAutoRealTrading = () => {
 						return
 					}
 				} else {
-					const accountId = planXConfig.account_id?.trim()
 					const accounts = ((await getStoreValue("accounts", {})) ??
 						{}) as AccountsConfigMap
-					const entry = accountId ? accounts[accountId] : undefined
+					const account = getPlanXAccountView(accounts)
 					if (
 						!hasSharedKeys ||
-						!accountId ||
-						!entry?.qmt_path?.trim() ||
-						!entry?.exported_dir?.trim()
+						!account.account_id ||
+						!account.qmt_path.trim() ||
+						!account.exported_dir.trim()
 					) {
 						showToast && toast.warning("请在实盘配置中完善 QMT 配置")
 						return
@@ -156,7 +156,6 @@ export const useToggleAutoRealTrading = () => {
 			getStoreValue,
 			setStoreValue,
 			killRocket,
-			planXConfig.account_id,
 		],
 	)
 
