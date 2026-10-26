@@ -363,7 +363,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 			[id]: {
 				qmt_path: values.qmt_path,
 				exported_dir: values.exported_dir,
-				copy_paste_optimize: values.copy_paste_optimize,
+				copy_paste_optimize: false,
 			},
 		}
 
@@ -1481,16 +1481,14 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 														</ButtonTooltip>
 													</div>
 													<p className="text-xs leading-relaxed text-muted-foreground">
-														{field.value
-															? "已开启：无需手动将选股内核生成的 QMT 策略复制到 QMT 客户端。"
-															: "已关闭：需将选股内核生成的 QMT 策略手动复制到 QMT 客户端中运行。"}
+														已关闭：需将选股内核生成的 QMT 策略手动复制到 QMT
+														客户端中运行。
 													</p>
 												</div>
 												<Switch
 													id="copy-paste-optimize"
-													checked={field.value}
-													disabled={!isMemberOrStock}
-													onCheckedChange={field.onChange}
+													checked={false}
+													disabled
 												/>
 											</div>
 											<FormMessage />
