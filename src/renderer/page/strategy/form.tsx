@@ -1267,10 +1267,9 @@ export function SelectStgForm({
 							control={form.control}
 							name="stock_timing"
 							render={({ field }) => {
-								const regionText = (field.value ?? [])
-									.map((item: { region?: string }) => item?.region?.trim())
-									.filter((region): region is string => Boolean(region))
-									.join("，")
+								const regionText = Object.keys(field.value ?? {}).join(
+									"，",
+								)
 								return (
 									<FormItem className={cn("flex flex-col")}>
 										<div className="rounded-lg border">

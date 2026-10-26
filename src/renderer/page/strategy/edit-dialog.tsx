@@ -161,9 +161,7 @@ export default function StrategyEditDialog({
 								scalein_targets: strategy.scalein_targets,
 								cross_sections: strategy.cross_sections || [],
 								stock_timing_list: strategy.stock_timing_list || [],
-								stock_timing:
-									(strategy as { stock_timing?: unknown[] }).stock_timing ||
-									[],
+								stock_timing: strategy.stock_timing || {},
 							}}
 							onSave={async (values) => {
 								if (fusionIndex < 0) {

@@ -852,219 +852,222 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 
 						<div className="flex flex-col gap-6">
 							<div className="grid grid-cols-2 items-start gap-4">
-							<FormField
-								name="split_order_amount"
-								control={form.control}
-								render={({ field }) => {
-									const multiplierStr =
-										form.watch("split_order_multiplier") ?? "1"
-									const multiplier = Number(multiplierStr) as 1 | 3
-									const is3X = multiplier === 3
-									return (
-										<FormItem className="flex flex-col gap-2">
-											<FormLabel className="flex min-h-14 items-end gap-1 leading-snug">
-												<span>拆单金额</span>
-												<span className="text-destructive">*</span>
-												<ButtonTooltip
-													content={`点击「随机生成」在 ${is3X ? "18000～36000" : "6000～12000"} 间取值，不可手动输入`}
-												>
-													<CircleHelp className="h-4 w-4 text-muted-foreground hover:cursor-pointer" />
-												</ButtonTooltip>
-											</FormLabel>
-											<div className="flex h-10 w-full items-center gap-2">
-												<FormControl className="min-w-0 flex-1">
-													<Input
-														ref={field.ref}
-														name={field.name}
-														onBlur={field.onBlur}
-														readOnly
-														tabIndex={-1}
-														value={
-															field.value === "" || field.value === undefined
-																? ""
-																: String(field.value)
-														}
-														disabled={!isMemberOrStock}
-														className="h-10 cursor-default bg-muted/30"
-														placeholder="请点击右侧随机生成"
-													/>
-												</FormControl>
-												<Button
-													type="button"
-													size="sm"
-													variant="outline"
-													className="h-10 shrink-0 px-3"
-													disabled={!isMemberOrStock}
-													onClick={(e) => {
-														e.preventDefault()
-														form.setValue(
-															"split_order_amount",
-															randomSplitOrderAmount(multiplier),
-															{ shouldValidate: true },
-														)
-													}}
-												>
-													<Shuffle className="mr-2 h-4 w-4" />
-													随机
-												</Button>
-												{/* 倍数切换 */}
-												<div className="flex h-10 shrink-0 items-stretch rounded-lg border bg-muted/40 p-1">
-													{(["1", "3"] as const).map((m) => (
-														<button
-															key={m}
-															type="button"
+								<FormField
+									name="split_order_amount"
+									control={form.control}
+									render={({ field }) => {
+										const multiplierStr =
+											form.watch("split_order_multiplier") ?? "1"
+										const multiplier = Number(multiplierStr) as 1 | 3
+										const is3X = multiplier === 3
+										return (
+											<FormItem className="flex flex-col gap-2">
+												<FormLabel className="flex min-h-14 items-end gap-1 leading-snug">
+													<span>拆单金额</span>
+													<span className="text-destructive">*</span>
+													<ButtonTooltip
+														content={`点击「随机生成」在 ${is3X ? "18000～36000" : "6000～12000"} 间取值，不可手动输入`}
+													>
+														<CircleHelp className="h-4 w-4 text-muted-foreground hover:cursor-pointer" />
+													</ButtonTooltip>
+												</FormLabel>
+												<div className="flex h-10 w-full items-center gap-2">
+													<FormControl className="min-w-0 flex-1">
+														<Input
+															ref={field.ref}
+															name={field.name}
+															onBlur={field.onBlur}
+															readOnly
+															tabIndex={-1}
+															value={
+																field.value === "" || field.value === undefined
+																	? ""
+																	: String(field.value)
+															}
 															disabled={!isMemberOrStock}
-															onClick={() => {
-																form.setValue("split_order_multiplier", m)
-																// 切换后自动重置拆单金额，避免旧值超出新范围
-																form.setValue("split_order_amount", "")
-															}}
-															className={`flex min-w-10 items-center justify-center rounded-md px-3.5 text-sm font-semibold transition-all focus-visible:outline-none disabled:opacity-50 ${
-																multiplierStr === m
-																	? "bg-neutral-950 text-white shadow-sm dark:bg-neutral-100 dark:text-neutral-950"
-																	: "text-muted-foreground hover:text-foreground"
-															}`}
-														>
-															{m}X
-														</button>
-													))}
+															className="h-10 cursor-default bg-muted/30"
+															placeholder="请点击右侧随机生成"
+														/>
+													</FormControl>
+													<Button
+														type="button"
+														size="sm"
+														variant="outline"
+														className="h-10 shrink-0 px-3"
+														disabled={!isMemberOrStock}
+														onClick={(e) => {
+															e.preventDefault()
+															form.setValue(
+																"split_order_amount",
+																randomSplitOrderAmount(multiplier),
+																{ shouldValidate: true },
+															)
+														}}
+													>
+														<Shuffle className="mr-2 h-4 w-4" />
+														随机
+													</Button>
+													{/* 倍数切换 */}
+													<div className="flex h-10 shrink-0 items-stretch rounded-lg border bg-muted/40 p-1">
+														{(["1", "3"] as const).map((m) => (
+															<button
+																key={m}
+																type="button"
+																disabled={!isMemberOrStock}
+																onClick={() => {
+																	form.setValue("split_order_multiplier", m)
+																	// 切换后自动重置拆单金额，避免旧值超出新范围
+																	form.setValue("split_order_amount", "")
+																}}
+																className={`flex min-w-10 items-center justify-center rounded-md px-3.5 text-sm font-semibold transition-all focus-visible:outline-none disabled:opacity-50 ${
+																	multiplierStr === m
+																		? "bg-neutral-950 text-white shadow-sm dark:bg-neutral-100 dark:text-neutral-950"
+																		: "text-muted-foreground hover:text-foreground"
+																}`}
+															>
+																{m}X
+															</button>
+														))}
+													</div>
 												</div>
-											</div>
-											{is3X && (
-												<div className="animate-pulse flex items-center gap-2 rounded-lg border border-amber-300/80 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-400">
-													<TriangleAlert className="h-3.5 w-3.5 shrink-0" />
-													<span>
-														3X 拆单金额较大，可能会导致
-														<span className="font-semibold">滑点过大</span>
-														，请谨慎使用
+												{is3X && (
+													<div className="animate-pulse flex items-center gap-2 rounded-lg border border-amber-300/80 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-400">
+														<TriangleAlert className="h-3.5 w-3.5 shrink-0" />
+														<span>
+															3X 拆单金额较大，可能会导致
+															<span className="font-semibold">滑点过大</span>
+															，请谨慎使用
+														</span>
+													</div>
+												)}
+												<FormMessage />
+											</FormItem>
+										)
+									}}
+								/>
+								<FormField
+									name="date_start"
+									control={form.control}
+									render={({ field }) => (
+										<FormItem className="flex flex-col gap-2">
+											<FormLabel className="flex min-h-14 items-end leading-snug">
+												<span>
+													计算起始日期{" "}
+													<span className="text-destructive">*</span>
+													<span className="text-xs text-muted-foreground">
+														运行选股的起始日期，一般参数越大需要越久的日期
 													</span>
-												</div>
-											)}
+												</span>
+											</FormLabel>
+											<FormControl>
+												<DatePicker
+													{...field}
+													disableFutureDates
+													className="h-10 w-full"
+												/>
+											</FormControl>
 											<FormMessage />
 										</FormItem>
-									)
-								}}
-							/>
-							<FormField
-								name="date_start"
-								control={form.control}
-								render={({ field }) => (
-									<FormItem className="flex flex-col gap-2">
-										<FormLabel className="flex min-h-14 items-end leading-snug">
-											<span>
-												计算起始日期 <span className="text-destructive">*</span>
-												<span className="text-xs text-muted-foreground">
-													运行选股的起始日期，一般参数越大需要越久的日期
-												</span>
-											</span>
-										</FormLabel>
-										<FormControl>
-											<DatePicker
-												{...field}
-												disableFutureDates
-												className="h-10 w-full"
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+									)}
+								/>
 							</div>
 							<div className="grid grid-cols-2 items-start gap-4">
-							<div className="flex min-w-0 flex-col gap-2">
-							<FormField
-								name="message_robot_url"
-								control={form.control}
-								render={({ field }) => (
-									<FormItem className="flex flex-col gap-2">
-										<FormLabel className="flex min-h-14 items-end leading-snug">
-											<span>
-												消息机器人 URL{" "}
-												<span className="text-xs text-muted-foreground">
-													机器人配置参考：
-												</span>
-												<span
-													onKeyDown={(e) => {
-														if (e.key === "Enter" || e.key === " ") {
-															e.preventDefault()
-														}
-													}}
-													onClick={() =>
-														openUrl("https://bbs.quantclass.cn/thread/10975")
-													}
-													className="underline cursor-pointer hover:no-underline text-xs"
-												>
-													quantclass/10975
-												</span>
-											</span>
-										</FormLabel>
-										<FormControl>
-											<Input
-												{...field}
-												className="h-10 w-full"
-												placeholder="可以不填..."
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							{isMember && (
-								<Button
-									type="button"
-									size="sm"
-									variant="outline"
-									className="w-fit text-destructive hover:text-destructive"
-									onClick={() => setFactorCacheConfirmOpen(true)}
-								>
-									<Trash2 className="mr-2 size-4" />
-									清除因子缓存
-								</Button>
-							)}
-							</div>
-							<FormField
-								name="reverse_repo_keep"
-								control={form.control}
-								render={({ field, formState }) => (
-									<FormItem className="flex flex-col gap-2">
-										<FormLabel className="flex min-h-14 items-end gap-1 leading-snug">
-											<span className="flex flex-wrap items-center gap-1">
-												<span>逆回购保留金额</span>
-												<span className="text-xs text-muted-foreground">
-													如果未了解请不要修改
-												</span>
-												<ButtonTooltip
-													content={
-														<div>
-															<p>
-																每天尾盘自动买入1天期的逆回购，如果不想全部的钱都买逆回购，可以在这里设置需要保留的金额
-															</p>
-														</div>
-													}
-												>
-													<CircleHelp
-														className="h-4 w-4 text-muted-foreground hover:cursor-pointer"
-														onClick={(e) => e.stopPropagation()}
+								<div className="flex min-w-0 flex-col gap-2">
+									<FormField
+										name="message_robot_url"
+										control={form.control}
+										render={({ field }) => (
+											<FormItem className="flex flex-col gap-2">
+												<FormLabel className="flex min-h-14 items-end leading-snug">
+													<span>
+														消息机器人 URL{" "}
+														<span className="text-xs text-muted-foreground">
+															机器人配置参考：
+														</span>
+														<span
+															onKeyDown={(e) => {
+																if (e.key === "Enter" || e.key === " ") {
+																	e.preventDefault()
+																}
+															}}
+															onClick={() =>
+																openUrl(
+																	"https://bbs.quantclass.cn/thread/10975",
+																)
+															}
+															className="underline cursor-pointer hover:no-underline text-xs"
+														>
+															quantclass/10975
+														</span>
+													</span>
+												</FormLabel>
+												<FormControl>
+													<Input
+														{...field}
+														className="h-10 w-full"
+														placeholder="可以不填..."
 													/>
-												</ButtonTooltip>
-											</span>
-										</FormLabel>
-										<FormControl>
-											<Input
-												type="number"
-												{...field}
-												value={field.value || ""}
-												min={0}
-												className="h-10 w-full"
-												placeholder="请填写保留金额"
-											/>
-										</FormControl>
-										<FormMessage>
-											{formState.errors.reverse_repo_keep?.message}
-										</FormMessage>
-									</FormItem>
-								)}
-							/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									{isMember && (
+										<Button
+											type="button"
+											size="sm"
+											variant="outline"
+											className="w-fit text-destructive hover:text-destructive"
+											onClick={() => setFactorCacheConfirmOpen(true)}
+										>
+											<Trash2 className="mr-2 size-4" />
+											清除因子缓存
+										</Button>
+									)}
+								</div>
+								<FormField
+									name="reverse_repo_keep"
+									control={form.control}
+									render={({ field, formState }) => (
+										<FormItem className="flex flex-col gap-2">
+											<FormLabel className="flex min-h-14 items-end gap-1 leading-snug">
+												<span className="flex flex-wrap items-center gap-1">
+													<span>逆回购保留金额</span>
+													<span className="text-xs text-muted-foreground">
+														如果未了解请不要修改
+													</span>
+													<ButtonTooltip
+														content={
+															<div>
+																<p>
+																	每天尾盘自动买入1天期的逆回购，如果不想全部的钱都买逆回购，可以在这里设置需要保留的金额
+																</p>
+															</div>
+														}
+													>
+														<CircleHelp
+															className="h-4 w-4 text-muted-foreground hover:cursor-pointer"
+															onClick={(e) => e.stopPropagation()}
+														/>
+													</ButtonTooltip>
+												</span>
+											</FormLabel>
+											<FormControl>
+												<Input
+													type="number"
+													{...field}
+													value={field.value || ""}
+													min={0}
+													className="h-10 w-full"
+													placeholder="请填写保留金额"
+												/>
+											</FormControl>
+											<FormMessage>
+												{formState.errors.reverse_repo_keep?.message}
+											</FormMessage>
+										</FormItem>
+									)}
+								/>
 							</div>
 						</div>
 					</form>
@@ -1424,7 +1427,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 											QMT 数据导出路径{" "}
 											<span className="text-destructive">*</span>{" "}
 											<span className="text-xs text-muted-foreground">
-												QMT 数据导出路径，不清楚可以询问客户经理
+												QMT 数据导出路径，不清楚可以私信询问林奇
 											</span>
 										</FormLabel>
 										<div className="flex w-full items-center gap-2">

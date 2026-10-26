@@ -124,7 +124,7 @@ export const SelectStgSchema = BasicSelectStgSchema.extend({
 	offset_list: OffsetListSchema,
 	cross_sections: z.array(z.any()).optional(), // 截面因子
 	stock_timing_list: z.array(z.any()).optional(), // 个股择时
-	stock_timing: z.array(z.any()).optional(), // 个股择时策略
+	stock_timing: z.record(z.string(), z.any()).optional(), // 个股择时策略
 	filter_list_post: z.array(z.any()).optional(), // 后置过滤因子列表
 	timing: TimingSchema,
 	scalein_targets: z.array(z.number()).optional(),
