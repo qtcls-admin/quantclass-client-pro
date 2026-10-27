@@ -23,6 +23,7 @@ import { ALLOWED_HOLD_PERIODS } from "@/renderer/constant/strategy"
 import { cn } from "@/renderer/lib/utils"
 import ScaleinTargetsView from "@/renderer/page/strategy/ScaleinTargetsView"
 import { useFormValidation } from "@/renderer/page/strategy/form-validation"
+import { StockTimingRegions } from "@/renderer/page/strategy/stock-timing-regions"
 import type {
 	SelectStgFormData,
 	SelectStgFormProps,
@@ -51,6 +52,7 @@ import {
 	CircleHelp,
 	CircuitBoard,
 	Filter,
+	LayoutGrid,
 	Loader,
 	Shell,
 	Shuffle,
@@ -1267,23 +1269,24 @@ export function SelectStgForm({
 							control={form.control}
 							name="stock_timing"
 							render={({ field }) => {
-								const regionText = Object.keys(field.value ?? {}).join(
-									"，",
-								)
+								const regionCount = Object.keys(field.value ?? {}).length
 								return (
 									<FormItem className={cn("flex flex-col")}>
 										<div className="rounded-lg border">
-											<FormLabel className="flex items-center gap-1 p-2 py-3">
-												<Timer className="size-4 mr-1" />
+											<FormLabel className="flex w-full items-center gap-1 p-2 py-3">
+												<LayoutGrid className="size-4 mr-1" />
 												个股择时策略
 												<span className="text-xs">（暂不支持直接编辑）</span>
+												{regionCount > 0 && (
+													<span className="ml-auto text-xs font-normal text-muted-foreground">
+														{regionCount} 个分区
+													</span>
+												)}
 											</FormLabel>
 											<Separator />
 											<div className="px-4 py-3">
-												{regionText ? (
-													<p className="text-sm text-foreground break-words">
-														{regionText}
-													</p>
+												{regionCount > 0 ? (
+													<StockTimingRegions value={field.value ?? {}} />
 												) : (
 													<p className="text-muted-foreground text-xs">
 														暂无个股择时策略，请先进行配置
