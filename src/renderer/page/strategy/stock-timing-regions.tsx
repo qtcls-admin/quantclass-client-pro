@@ -54,7 +54,7 @@ export function StockTimingRegions({ value }: StockTimingRegionsProps) {
 	const regions = Object.entries(value ?? {})
 
 	return (
-		<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+		<div className="grid max-h-[34rem] grid-cols-1 gap-3 overflow-y-auto md:grid-cols-2">
 			{regions.map(([name, region]) => (
 				<RegionCard
 					key={name}
@@ -525,11 +525,10 @@ function formatValue(value: unknown): string {
 }
 
 const DIRECTION_STYLES: Record<string, { label: string; className: string }> = {
-		buy: {
-			label: "买入",
-			className:
-				"bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300",
-		},
+	buy: {
+		label: "买入",
+		className: "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300",
+	},
 	sell: {
 		label: "卖出",
 		className: "bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-300",

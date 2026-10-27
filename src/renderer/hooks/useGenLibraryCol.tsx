@@ -412,6 +412,18 @@ export const useGenLibraryColumn = (
 				)
 			},
 		},
+		{
+			accessorKey: "stock_timing",
+			header: "个股择时策略",
+			cell: ({ row }) => {
+				const stockTiming = (row.original as SelectStgType).stock_timing
+				const regionCount =
+					stockTiming && typeof stockTiming === "object"
+						? Object.keys(stockTiming).length
+						: 0
+				return regionCount > 0 ? regionCount : "无"
+			},
+		},
 		...(hideOperationColumn
 			? []
 			: [
