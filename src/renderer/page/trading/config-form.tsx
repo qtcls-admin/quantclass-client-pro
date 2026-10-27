@@ -89,6 +89,7 @@ const QmtConfigFieldsSchema = z.object({
 	qmt_mode: z.enum(["planA", "planX"]),
 	ws_host: z.string(),
 	ws_port: z.string(),
+	use_open_sell: z.enum(["0", "1"]),
 })
 
 const PlanXConfigFieldsSchema = z.object({
@@ -167,8 +168,6 @@ const RealMarketFormSchema = z.object({
 	filter_bj: z.enum(["0", "1"]),
 	// -- 均衡-EQUAL，性能-PERFORMANCE，节能-ECONOMY
 	performance_mode: z.enum(["EQUAL", "PERFORMANCE", "ECONOMY"]),
-	// -- 开盘是否挂涨停卖出: "1" 启用，"0" 禁用
-	use_open_sell: z.enum(["0", "1"]),
 	reverse_repo_keep: z.union([z.string(), z.number()]).refine(
 		(value) => {
 			const numValue =
@@ -234,7 +233,6 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 			filter_cyb: realMarketConfig.filter_cyb,
 			filter_bj: isCicc ? "1" : realMarketConfig.filter_bj,
 			performance_mode: realMarketConfig.performance_mode ?? "EQUAL",
-			use_open_sell: realMarketConfig.use_open_sell ?? "0",
 			reverse_repo_keep: realMarketConfig.reverse_repo_keep ?? 1000,
 			split_order_amount: realMarketConfig.split_order_amount ?? "",
 			split_order_multiplier:
@@ -243,13 +241,14 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 	}, [realMarketConfig])
 
 	const planADefaultValues = useMemo(
-		() => ({
+		(): PlanAFormData => ({
 			qmt_path: realMarketConfig.qmt_path ?? "",
 			account_id: realMarketConfig.account_id ?? "",
 			qmt_port: realMarketConfig.qmt_port ?? "58610",
 			qmt_mode: realMarketConfig.qmt_mode === "planA" ? "planA" : "planX",
 			ws_host: realMarketConfig.ws_host ?? "",
 			ws_port: realMarketConfig.ws_port ?? "",
+			use_open_sell: realMarketConfig.use_open_sell ?? "0",
 		}),
 		[realMarketConfig],
 	)
@@ -270,7 +269,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 		defaultValues,
 	})
 
-	const planAForm = useForm<PlanAFormData>({
+	const planAForm = useForm<PlanAFormData, unknown, PlanAFormData>({
 		mode: "onChange",
 		resolver: zodResolver(QmtConfigSchema),
 		defaultValues: planADefaultValues,
@@ -331,17 +330,14 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 		const existing = ((await getStoreValue("real_market_config", {})) ??
 			{}) as Record<string, unknown>
 		const values = planAForm.getValues()
-
-		await setStoreValue("real_market_config", {
+		const formattedValues = {
 			...existing,
-			qmt_path: values.qmt_path,
-			account_id: values.account_id,
-			qmt_port: values.qmt_port,
-			qmt_mode: "planA",
-			ws_host: values.ws_host,
-			ws_port: values.ws_port,
+			...values,
+			qmt_mode: "planA" as const,
 			...(isQmtCiccBroker ? { filter_bj: true } : {}),
-		})
+		}
+
+		await setStoreValue("real_market_config", formattedValues)
 		setRealMarketConfig((prev) => ({
 			...prev,
 			...values,
@@ -1210,7 +1206,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 
 									<FormField
 										name="use_open_sell"
-										control={form.control}
+										control={planAForm.control}
 										render={({ field }) => (
 											<FormItem className="col-span-2">
 												<FormLabel className="!mt-0 flex items-center gap-1 mr-1">
@@ -1455,7 +1451,7 @@ export function TradingConfigForm({ onGoToQmt }: TradingConfigFormProps) {
 								<FormField
 									name="copy_paste_optimize"
 									control={planXForm.control}
-									render={({ field }) => (
+									render={() => (
 										<FormItem className="col-span-2">
 											<div className="flex items-start justify-between gap-4 rounded-lg border bg-muted/20 px-4 py-3">
 												<div className="min-w-0 space-y-1">
