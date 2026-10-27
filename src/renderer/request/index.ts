@@ -87,15 +87,9 @@ export const getStatusExpires = async () => {
 	}
 }
 
-const CRM_BASE_URL = (
-	import.meta.env.VITE_CRM_BASE_URL || "https://xms.quantclass.cn"
-).replace(/\/$/, "")
-
 export const getCreditBalance = async (): Promise<CreditBalanceResponse | null> => {
 	try {
-		return await get<CreditBalanceResponse>(
-			`${CRM_BASE_URL}/api/user/get/credit-balance`,
-		)
+		return await get<CreditBalanceResponse>("/api/user/get/credit-balance")
 	} catch (error) {
 		if (
 			error instanceof ApiError &&
@@ -113,9 +107,7 @@ export const getCreditLedger = async (params?: {
 	change_type?: CreditChangeType
 }): Promise<CreditLedgerResponse | null> => {
 	try {
-		return await get<CreditLedgerResponse>(
-			`${CRM_BASE_URL}/api/user/get/credit-ledger`,
-			{
+		return await get<CreditLedgerResponse>("/api/user/get/credit-ledger", {
 				page: params?.page ?? 1,
 				size: params?.size ?? 20,
 				change_type: params?.change_type,

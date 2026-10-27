@@ -29,9 +29,6 @@ export default defineConfig(({ mode }) => {
 		"process.env.VITE_BASE_URL": JSON.stringify(
 			env.VITE_BASE_URL || "https://api.quantclass.cn",
 		),
-		"process.env.VITE_CRM_BASE_URL": JSON.stringify(
-			env.VITE_CRM_BASE_URL || "https://xms.quantclass.cn",
-		),
 		"process.env.VITE_XBX_ENV": JSON.stringify(env.VITE_XBX_ENV || mode),
 		"process.env.VITE_APP_VERSION": JSON.stringify(
 			env.VITE_APP_VERSION || "3.4.0",

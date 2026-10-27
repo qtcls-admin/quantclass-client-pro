@@ -13,7 +13,6 @@
 interface ImportMetaEnv {
 	readonly VITE_XBX_ENV: string
 	readonly VITE_BASE_URL: string
-	readonly VITE_CRM_BASE_URL: string
 }
 
 interface ImportMeta {

@@ -40,7 +40,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           VITE_BASE_URL: ${{ secrets.VITE_BASE_URL || 'https://api.quantclass.cn' }}
-          VITE_CRM_BASE_URL: ${{ secrets.VITE_CRM_BASE_URL || 'https://xms.quantclass.cn' }}
           VITE_XBX_ENV: production
           VITE_APP_VERSION: ${{ github.ref_name }}
 
@@ -51,7 +50,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           VITE_BASE_URL: ${{ secrets.VITE_BASE_URL || 'https://api.quantclass.cn' }}
-          VITE_CRM_BASE_URL: ${{ secrets.VITE_CRM_BASE_URL || 'https://xms.quantclass.cn' }}
           VITE_XBX_ENV: production
           VITE_APP_VERSION: ${{ github.ref_name }}
 
