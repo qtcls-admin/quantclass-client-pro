@@ -82,7 +82,7 @@ export default function BasicStrategyLibrary() {
 	const canAddMore = selectStgList.length < BASIC_SELECT_STRATEGY_IMPORT_LIMIT
 
 	useUnmount(() => {
-		setStoreValue("select_stock.backtest_name", backtestConfig.backtest_name)
+		setStoreValue("stock_quant.backtest_name", backtestConfig.backtest_name)
 	})
 
 	return (

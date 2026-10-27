@@ -21,7 +21,7 @@ import {
 import { Input } from "@/renderer/components/ui/input"
 import {
 	POS_MGMT_STRATEGY_CONFIG,
-	SELECT_STOCK_STRATEGY_CONFIG,
+	STOCK_QUANT_STRATEGY_CONFIG,
 } from "@/renderer/constant"
 import { SettingsGearIcon } from "@/renderer/icons/SettingsGearIcon"
 import {
@@ -52,7 +52,7 @@ export function BacktestSettings() {
 	const { permissions } = useAtomValue(userAtom)
 	const isMember = checkPermission(permissions, "isMember")
 	const configKey = useMemo(() => {
-		return isMember ? POS_MGMT_STRATEGY_CONFIG : SELECT_STOCK_STRATEGY_CONFIG
+		return isMember ? POS_MGMT_STRATEGY_CONFIG : STOCK_QUANT_STRATEGY_CONFIG
 	}, [isMember])
 
 	const debouncedSetEstimatedFund = useDebounceFn(

@@ -89,6 +89,11 @@ export function validateBasicStockQuantImport(
 export interface StockQuantConfig {
 	strategy: Record<string, unknown>
 	strategy2: Record<string, unknown> | null
+	backtest_name?: string
+	initial_cash?: number
+	start_date?: string | null
+	end_date?: string | null
+	re_timing?: { name: string; params: unknown[] } | null
 }
 
 export function buildStockQuantPayload(

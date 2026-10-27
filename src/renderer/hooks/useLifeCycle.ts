@@ -10,7 +10,7 @@
 
 import {
 	POS_MGMT_STRATEGY_CONFIG,
-	SELECT_STOCK_STRATEGY_CONFIG,
+	STOCK_QUANT_STRATEGY_CONFIG,
 } from "@/renderer/constant"
 import { useConfig } from "@/renderer/hooks/useConfig"
 import { useHandleTimeTask } from "@/renderer/hooks/useHandleTimeTask"
@@ -246,7 +246,7 @@ export const useLifeCycle = () => {
 	const initBacktestConfig = async (member: boolean) => {
 		const configKey = member
 			? POS_MGMT_STRATEGY_CONFIG
-			: SELECT_STOCK_STRATEGY_CONFIG
+			: STOCK_QUANT_STRATEGY_CONFIG
 
 		const [initialCash, startDate, endDate, backtestName, reTiming] =
 			await Promise.all([

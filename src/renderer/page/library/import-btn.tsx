@@ -118,10 +118,10 @@ const StgImportButton = forwardRef<StgImportHandle>((_props, ref) => {
 				}))
 
 				// -- Set to config json store
-				setStoreValue("select_stock.backtest_name", backtestName)
+				setStoreValue("stock_quant.backtest_name", backtestName)
 				// -- 保存 re_timing（资金曲线再择时）
 				const reTimingObj = reTiming ? JSON.parse(reTiming) : null
-				setStoreValue("select_stock.re_timing", reTimingObj)
+				setStoreValue("stock_quant.re_timing", reTimingObj)
 				setReTiming(reTimingObj)
 				// -- Set to render local storage
 				setBacktestConfig((p) => ({

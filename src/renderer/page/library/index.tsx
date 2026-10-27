@@ -35,7 +35,7 @@ export default function StrategyLibrary() {
 	const backtestName = backtestConfig.backtest_name
 
 	useUnmount(() => {
-		setStoreValue("select_stock.backtest_name", backtestConfig.backtest_name)
+		setStoreValue("stock_quant.backtest_name", backtestConfig.backtest_name)
 	})
 
 	return (

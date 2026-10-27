@@ -47,7 +47,7 @@ export function useStrategyManager() {
 	const resetSelectStgList = useCallback(async () => {
 		setSelectStgList([])
 		setReTiming(null)
-		setStoreValue("select_stock.re_timing", null)
+		setStoreValue("stock_quant.re_timing", null)
 		await persistSelectStgList([])
 		return []
 	}, [setSelectStgList, setReTiming, persistSelectStgList])

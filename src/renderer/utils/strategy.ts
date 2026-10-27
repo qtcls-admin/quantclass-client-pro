@@ -201,14 +201,26 @@ export const saveStockQuantStrategies = async (
 	)
 
 	if (selectStrategyList.length === 0) {
-		await setStoreValue(STOCK_QUANT_STRATEGY_CONFIG, {})
+		await Promise.all([
+			setStoreValue(`${STOCK_QUANT_STRATEGY_CONFIG}.strategy`, null),
+			setStoreValue(`${STOCK_QUANT_STRATEGY_CONFIG}.strategy2`, null),
+		])
 		await setRebalanceTimeConfig(rebTimeConfig)
 		return { rebTimeConfig, strategyRuntimeConfig }
 	}
 
 	const payload = buildStockQuantPayload(selectStrategyList)
 	if (payload) {
-		await setStoreValue(STOCK_QUANT_STRATEGY_CONFIG, payload)
+		await Promise.all([
+			setStoreValue(
+				`${STOCK_QUANT_STRATEGY_CONFIG}.strategy`,
+				payload.strategy,
+			),
+			setStoreValue(
+				`${STOCK_QUANT_STRATEGY_CONFIG}.strategy2`,
+				payload.strategy2,
+			),
+		])
 	}
 
 	await setRebalanceTimeConfig(rebTimeConfig)
