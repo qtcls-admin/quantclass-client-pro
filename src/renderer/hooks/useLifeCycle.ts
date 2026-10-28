@@ -39,10 +39,10 @@ import type { PosStrategyType, SelectStgType } from "@/renderer/types/strategy"
 import { loadSelectStockMigrationSnapshot } from "@/renderer/utils/migrate-select-stock-to-pos-mgmt"
 import { requestSelectStockMigration } from "@/renderer/utils/select-stock-migration-gate"
 import {
-	type SplitOrderMultiplier,
 	parseSplitOrderAmount,
+	parseSplitOrderMultiplier,
 	randomSplitOrderAmount,
-} from "@/renderer/utils/split-order-amount"
+} from "@/shared/lib/split-order-amount.js"
 import { checkPermission } from "@/shared/lib/permission"
 import type { AccountsConfigMap } from "@/shared/types/qmt-accounts"
 import type { RebTimeConfig } from "@/shared/types/reb-time-config.js"
@@ -164,11 +164,9 @@ export const useLifeCycle = () => {
 			split_order_multiplier?: unknown
 		}
 		const parsedSplit = parseSplitOrderAmount(marketCfg?.split_order_amount)
-		const splitMultiplier: SplitOrderMultiplier =
-			marketCfg?.split_order_multiplier === "3" ||
-			marketCfg?.split_order_multiplier === 3
-				? 3
-				: 1
+		const splitMultiplier = parseSplitOrderMultiplier(
+			marketCfg?.split_order_multiplier,
+		)
 		const splitOrderAmount =
 			parsedSplit ?? randomSplitOrderAmount(splitMultiplier)
 		if (parsedSplit === undefined) {

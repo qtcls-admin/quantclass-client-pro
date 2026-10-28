@@ -8,6 +8,7 @@
  * See the LICENSE file and https://mariadb.com/bsl11/
  */
 
+import { DataLocationCtrl } from "@/renderer/components/data-location-ctrl"
 import { Button } from "@/renderer/components/ui/button"
 import ButtonTooltip from "@/renderer/components/ui/button-tooltip"
 import {
@@ -181,9 +182,14 @@ function DataCenterCard() {
 
 			<div className="px-4 py-3.5 flex-1 flex flex-col">
 				<div>
-					<div className="text-sm font-semibold">课程所需数据</div>
-					<div className="mt-0.5 text-xs text-muted-foreground">
-						查看下载状态，准备策略运行的数据。
+					<div className="text-sm font-semibold mb-2">
+						存储路径{" "}
+						<span className="text-muted-foreground text-xs font-normal">
+							建议预留最少 20GB 空间
+						</span>
+					</div>
+					<div className="flex items-center gap-2 w-full">
+						<DataLocationCtrl className="min-w-0 flex-1" />
 					</div>
 				</div>
 
@@ -203,8 +209,8 @@ function DataCenterCard() {
 							value: subscribedCount > 0 ? `${subscribedCount} 份` : "—",
 						},
 						{
-							label: "下载任务",
-							value: isUpdating ? "同步中" : "未读取",
+							label: "更新任务",
+							value: isUpdating ? "更新中" : "未启动",
 						},
 						{
 							label: "待更新数据",

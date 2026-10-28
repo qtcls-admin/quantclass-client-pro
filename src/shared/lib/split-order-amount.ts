@@ -30,3 +30,7 @@ export function parseSplitOrderAmount(value: unknown): number | undefined {
 	if (valid1X || valid3X) return num
 	return undefined
 }
+
+export function parseSplitOrderMultiplier(raw: unknown): SplitOrderMultiplier {
+	return raw === "3" || raw === 3 ? 3 : 1
+}

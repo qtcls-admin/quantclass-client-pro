@@ -15,6 +15,11 @@ import { STOCK_QUANT_STRATEGY_CONFIG } from "@/shared/constants.js"
 import { stockQuantToStrategyList } from "@/shared/lib/basic-strategy-import.js"
 import { checkPermission } from "@/shared/lib/permission.js"
 import {
+	parseSplitOrderAmount,
+	parseSplitOrderMultiplier,
+	randomSplitOrderAmount,
+} from "@/shared/lib/split-order-amount.js"
+import {
 	type SelectStrategyNameSource,
 	getFusionGroupSubRealMarketStrategyName,
 	getFusionTopRealMarketStrategyName,
@@ -93,11 +98,17 @@ function randomBuyInterval(): number {
 	return Math.floor(Math.random() * (45 - 25 + 1)) + 25
 }
 
-function resolveSplitOrderAmount(raw: unknown): number {
-	const num = typeof raw === "number" ? raw : Number(raw)
-	if (typeof num === "number" && !Number.isNaN(num)) return num
-	logger.warn("[real_market_25] split_order_amount 缺失，使用 1X 随机值")
-	return Math.floor(Math.random() * (12000 - 6000 + 1)) + 6000
+function resolveSplitOrderAmount(
+	rawAmount: unknown,
+	rawMultiplier: unknown,
+): number {
+	const parsed = parseSplitOrderAmount(rawAmount)
+	if (parsed !== undefined) return parsed
+	const multiplier = parseSplitOrderMultiplier(rawMultiplier)
+	logger.warn(
+		`[real_market_25] split_order_amount 缺失或无效，使用 ${multiplier}X 随机值`,
+	)
+	return randomSplitOrderAmount(multiplier)
 }
 
 function holdPlan(strategy: StrategySource): string[] {
@@ -301,8 +312,13 @@ export async function writeRealMarket25(
 ): Promise<void> {
 	const isMember = checkPermission(permissions, "isMember")
 	const rebConfig = getRebalanceTimeConfig()
+	const realMarketConfig = (await configStore.getValue("real_market_config", {})) as {
+		split_order_amount?: unknown
+		split_order_multiplier?: unknown
+	}
 	const splitOrderAmount = resolveSplitOrderAmount(
-		await configStore.getValue("real_market_config.split_order_amount"),
+		realMarketConfig?.split_order_amount,
+		realMarketConfig?.split_order_multiplier,
 	)
 	const strategies = isMember
 		? ((await configStore.getValue(

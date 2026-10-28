@@ -52,7 +52,7 @@ import { getBrokerNameByAccountId } from "@/renderer/utils/broker"
 import {
 	parseSplitOrderAmount,
 	randomSplitOrderAmount,
-} from "@/renderer/utils/split-order-amount"
+} from "@/shared/lib/split-order-amount.js"
 import { checkPermission } from "@/shared/lib/permission"
 import type { AccountsConfigMap } from "@/shared/types/qmt-accounts"
 import { zodResolver } from "@hookform/resolvers/zod"

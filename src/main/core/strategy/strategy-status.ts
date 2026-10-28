@@ -9,6 +9,7 @@
  */
 
 import { getJsonDataFromFile } from "@/main/core/dataList.js"
+import { getRebalanceTimeConfig } from "@/main/lib/rebalanceTimeStore.js"
 import { userStore } from "@/main/lib/userStore.js"
 import store from "@/main/store/index.js"
 import logger from "@/main/utils/wiston.js"
@@ -21,12 +22,47 @@ import {
 	getFusionTopRealMarketStrategyName,
 	getSelectRealMarketStrategyName,
 } from "@/shared/lib/real-market-strategy-name.js"
+import type { RebTimeConfig } from "@/shared/types/reb-time-config.js"
 import type {
 	StrategyStatus,
 	StrategyStatusStat,
 } from "@/shared/types/strategy-status.js"
 import { StrategyStatusEnum } from "@/shared/types/strategy-status.js"
 import { sortBy } from "lodash-es"
+
+function pad2(value: number): string {
+	return String(value).padStart(2, "0")
+}
+
+function formatRebTradeTime(
+	time: RebTimeConfig["sell_time"] | undefined,
+): string {
+	if (
+		!time ||
+		typeof time.hour !== "number" ||
+		typeof time.minute !== "number"
+	) {
+		return ""
+	}
+	return `${pad2(time.hour)}:${pad2(time.minute)}:${pad2(time.second ?? 0)}`
+}
+
+/** 按策略 rebalance_time 从 rebalance_time.json 解析买卖时间 */
+function getTradeTimeStrings(
+	rebalanceTime: string | undefined,
+	rebConfig: Record<string, RebTimeConfig>,
+): { sellTimeStr: string; buyTimeStr: string } {
+	const key = rebalanceTime ?? "close-open"
+	const entry = rebConfig[key]
+	if (!entry) {
+		logger.warn(`[strategy-status] 缺少换仓时间配置: ${key}`)
+		return { sellTimeStr: "", buyTimeStr: "" }
+	}
+	return {
+		sellTimeStr: formatRebTradeTime(entry.sell_time),
+		buyTimeStr: formatRebTradeTime(entry.buy_time),
+	}
+}
 
 // 从 JSON 文件读取 stats 数据
 // kernel: 'fuel' | 'fusion' | 'rocket'
@@ -738,20 +774,23 @@ async function getStrategyStatusListForSelect(
 			return []
 		}
 
+		const rebConfig = getRebalanceTimeConfig()
+
 		const result: StrategyStatus[][] = await Promise.all(
 			strategyList.map(async (strategy: any, index: number) => {
 				const strategyName =
 					strategy.remark_name?.trim() ||
 					getSelectRealMarketStrategyName(index, strategy)
 
-				// TODO: 买卖时间原从 real_market_25.json 读取，后续从新落盘来源接入
-				const sellTimeStr = ""
-				const buyTimeStr = ""
+				const rebalanceTime = strategy.rebalance_time
+				const { sellTimeStr, buyTimeStr } = getTradeTimeStrings(
+					rebalanceTime,
+					rebConfig,
+				)
 
 				const { latestTime, hasTimingOrOverride } = getStrategyTiming(strategy)
 
 				// rebalance_time 为 "close-open" 或不存在时，为隔日换仓，其他值则为当日换仓
-				const rebalanceTime = strategy.rebalance_time
 				const isOvernightRebalance =
 					!rebalanceTime || rebalanceTime === "close-open"
 
@@ -803,6 +842,8 @@ async function getStrategyStatusListForPos(
 			return []
 		}
 
+		const rebConfig = getRebalanceTimeConfig()
+
 		interface PosStrategy {
 			name: string
 			latestTime: string
@@ -833,9 +874,11 @@ async function getStrategyStatusListForPos(
 
 			if (type === "pos") {
 				// pos 类型：只生成一个元素
-				// TODO: 买卖时间原从 real_market_25.json 读取，后续从新落盘来源接入
-				const sellTimeStr = ""
-				const buyTimeStr = ""
+				const rebalanceTime = strategy.rebalance_time
+				const { sellTimeStr, buyTimeStr } = getTradeTimeStrings(
+					rebalanceTime,
+					rebConfig,
+				)
 
 				// 检查 strategy_pool 中是否有任何子策略包含 timing 或 override
 				let posHasTimingOrOverride = false
@@ -866,7 +909,6 @@ async function getStrategyStatusListForPos(
 					}
 				}
 
-				const rebalanceTime = strategy.rebalance_time
 				const isOvernightRebalance =
 					!rebalanceTime || rebalanceTime === "close-open"
 
@@ -877,7 +919,7 @@ async function getStrategyStatusListForPos(
 					hasTimingOrOverride: posHasTimingOrOverride,
 					sellTimeStr,
 					buyTimeStr,
-					rebalanceTime,
+					rebalanceTime: rebalanceTime ?? "close-open",
 					isOvernightRebalance,
 					isStrategyPool: true, // 标记为 pos 类型
 					capWeight,
@@ -904,9 +946,11 @@ async function getStrategyStatusListForPos(
 							subStrategies.length,
 						)
 
-					// TODO: 买卖时间原从 real_market_25.json 读取，后续从新落盘来源接入
-					const sellTimeStr = ""
-					const buyTimeStr = ""
+					const rebalanceTime = subStrategy.rebalance_time
+					const { sellTimeStr, buyTimeStr } = getTradeTimeStrings(
+						rebalanceTime,
+						rebConfig,
+					)
 
 					const { latestTime, hasTimingOrOverride } =
 						getStrategyTiming(subStrategy)
@@ -920,7 +964,7 @@ async function getStrategyStatusListForPos(
 						hasTimingOrOverride,
 						sellTimeStr,
 						buyTimeStr,
-						rebalanceTime: subStrategy.rebalance_time,
+						rebalanceTime: rebalanceTime ?? "close-open",
 						isOvernightRebalance:
 							!subStrategy.rebalance_time ||
 							subStrategy.rebalance_time === "close-open",
@@ -934,12 +978,13 @@ async function getStrategyStatusListForPos(
 				}
 			} else {
 				// select 类型：单个策略
-				// TODO: 买卖时间原从 real_market_25.json 读取，后续从新落盘来源接入
-				const sellTimeStr = ""
-				const buyTimeStr = ""
+				const rebalanceTime = strategy.rebalance_time
+				const { sellTimeStr, buyTimeStr } = getTradeTimeStrings(
+					rebalanceTime,
+					rebConfig,
+				)
 
 				const { latestTime, hasTimingOrOverride } = getStrategyTiming(strategy)
-				const rebalanceTime = strategy.rebalance_time
 				const isOvernightRebalance =
 					!rebalanceTime || rebalanceTime === "close-open"
 
@@ -952,14 +997,14 @@ async function getStrategyStatusListForPos(
 					hasTimingOrOverride,
 					sellTimeStr,
 					buyTimeStr,
-					rebalanceTime,
+					rebalanceTime: rebalanceTime ?? "close-open",
 					isOvernightRebalance,
 					capWeight,
 					hasStockTimingList,
 				})
 
 				logger.info(
-					`[strategy-status] select策略 ${index}(${strategyName}): 卖出时间=${sellTimeStr}, 买入时间=${buyTimeStr}, timing时间=${latestTime}, hasTimingOrOverride=${hasTimingOrOverride}, cap_weight=${capWeight}`,
+					`[strategy-status] select策略 ${index}(${strategyName}): 卖出时间=${sellTimeStr}, 买入时间=${buyTimeStr}, timing时间=${latestTime}, hasTimingOrOverride=${hasTimingOrOverride}, rebalance_time=${rebalanceTime}, cap_weight=${capWeight}`,
 				)
 			}
 		}
