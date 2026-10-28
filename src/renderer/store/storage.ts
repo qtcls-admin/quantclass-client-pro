@@ -163,7 +163,6 @@ export const realMarketConfigSchemaAtom = atomWithStorage<
 	{ getOnInit: true },
 )
 
-/** Plan X 账户配置，与 electron store 的 `accounts` 同步（内存快照，不写 localStorage） */
 export const accountsAtom = atom<AccountsConfigMap>({})
 
 export const showMoneyAtom = atomWithStorage<boolean>(

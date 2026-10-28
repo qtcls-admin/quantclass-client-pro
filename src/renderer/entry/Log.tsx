@@ -9,10 +9,13 @@
  */
 
 // import { isWindows } from "@/renderer/constant"
+import { useTerminalStoreHydration } from "@/renderer/hooks/useTerminalStoreHydration"
 import LogWindowBar from "@/renderer/entry/LogWindowBar"
 import { LogDashboard } from "../components/logModal"
 
 export default function Log() {
+	useTerminalStoreHydration()
+
 	return (
 		<div className="h-screen w-screen flex flex-col overflow-hidden">
 			<LogWindowBar />

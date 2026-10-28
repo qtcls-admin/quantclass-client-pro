@@ -50,6 +50,7 @@ import { useMount, useUnmount, useUpdateEffect } from "etc-hooks"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { toast } from "sonner"
 import { useAppVersions } from "./useAppVersion"
+import { fetchQmtConnectOkFromStore } from "./useTerminalStoreHydration"
 import { useSettings } from "./useSettings"
 import { useUserInfoSync } from "./useUserInfoSync"
 const {
@@ -180,8 +181,7 @@ export const useLifeCycle = () => {
 			{}) as AccountsConfigMap
 		setters.setAccounts(accounts)
 
-		const qmtConnectOk = await getStoreValue("qmt_connect_ok", false)
-		setters.setQmtConnectOk(qmtConnectOk === true)
+		setters.setQmtConnectOk(await fetchQmtConnectOkFromStore())
 
 		if (realMarketConfig) {
 			const qmtMode = realMarketConfig?.qmt_mode === "planA" ? "planA" : "planX"
