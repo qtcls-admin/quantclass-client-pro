@@ -38,6 +38,7 @@ import type {
 	BasicTimingStgType,
 	SelectStgType,
 } from "@/renderer/types/strategy"
+import { formatSelectNum } from "@/renderer/utils/formatSelect"
 import { resolveSelectStrategyName } from "@/shared/lib/real-market-strategy-name"
 import {
 	AlarmClockCheck,
@@ -196,9 +197,7 @@ function FactorListGrid({ factors }: { factors?: unknown[] }) {
 							className="grid grid-cols-4 gap-x-2 text-[11px] text-muted-foreground break-all leading-snug"
 						>
 							<span>{factor[0] ?? "--"}</span>
-							<span>
-								{factor[1] ? "从小到大排序" : "从大到小排序"}
-							</span>
+							<span>{factor[1] ? "从小到大排序" : "从大到小排序"}</span>
 							<span className="font-mono">
 								{factor[2] != null ? JSON.stringify(factor[2]) : "无参数"}
 							</span>
@@ -471,7 +470,7 @@ export function StrategyCard({
 
 	const subtitle =
 		type === "select" && isBasicSelectStgType(strategy)
-			? `选股数量 ${strategy.select_num ?? "--"} · 持仓周期 ${strategy.hold_period ?? "--"} · ${rebalanceLabel}`
+			? `选股数量 ${formatSelectNum(strategy.select_num)} · 持仓周期 ${strategy.hold_period ?? "--"} · ${rebalanceLabel}`
 			: type === "timing" && isBasicTimingStgType(strategy)
 				? `${strategy.code ?? "--"} · ${strategy.code_type ?? "--"} · ${rebalanceLabel}`
 				: isBasicRotationStgType(strategy)
@@ -482,7 +481,6 @@ export function StrategyCard({
 
 	return (
 		<Card className="flex flex-col rounded-2xl border bg-card shadow-sm transition-shadow hover:shadow-md px-5 py-4">
-			{/* 区域一：标题 + 操作菜单 */}
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0 flex-1 space-y-1">
 					<div className="flex items-baseline gap-2 min-w-0 pr-2">
@@ -564,7 +562,6 @@ export function StrategyCard({
 			<div>
 				<hr className={cn("my-4", DIVIDER)} />
 
-				{/* 区域二：核心配置 */}
 				<div>
 					{isBasicSelectStgType(strategy) ? (
 						<SelectFooter strategy={strategy} />
@@ -578,7 +575,6 @@ export function StrategyCard({
 				{hasFooter ? (
 					<>
 						<hr className={cn("my-4", DIVIDER)} />
-						{/* 区域三：补充详情 */}
 						<div>
 							{isBasicSelectStgType(strategy) ? (
 								<SelectExclusiveGrid onSelect={() => setPromoOpen(true)} />

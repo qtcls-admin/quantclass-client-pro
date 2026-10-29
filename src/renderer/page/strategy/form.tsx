@@ -30,6 +30,10 @@ import type {
 } from "@/renderer/page/strategy/types"
 import { SelectStgFormSchema } from "@/renderer/schemas/strategy"
 import { rebTimeConfigAtom } from "@/renderer/store/storage"
+import {
+	formatSelectInclusive,
+	formatSelectNum,
+} from "@/renderer/utils/formatSelect"
 import { Input } from "@heroui/input"
 import { Select, SelectItem, SelectSection } from "@heroui/select"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -155,7 +159,6 @@ export function SelectStgForm({
 			const values = form.getValues()
 			onSave({
 				...values,
-				select_num: Number(values.select_num),
 				rebalance_time: values.rebalance_time || "close-open",
 			})
 			setSaving(false)
@@ -257,10 +260,11 @@ export function SelectStgForm({
 								<FormItem>
 									<FormControl>
 										<Input
-											type="number"
-											{...field}
-											value={field.value?.toString()}
-											min={1}
+											type="text"
+											name={field.name}
+											onBlur={field.onBlur}
+											ref={field.ref}
+											value={formatSelectNum(field.value)}
 											label={
 												<>
 													<span className="mr-1">选股数量</span>
@@ -271,6 +275,32 @@ export function SelectStgForm({
 											variant="bordered"
 											readOnly
 											errorMessage={formState.errors.select_num?.message}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="select_inclusive"
+							render={({ field }) => (
+								<FormItem>
+									<FormControl>
+										<Input
+											type="text"
+											name={field.name}
+											onBlur={field.onBlur}
+											ref={field.ref}
+											value={formatSelectInclusive(field.value)}
+											label={
+												<>
+													<span className="mr-1">区间边界模式</span>
+													<span className="text-xs">（不支持直接编辑）</span>
+												</>
+											}
+											variant="bordered"
+											readOnly
 										/>
 									</FormControl>
 									<FormMessage />

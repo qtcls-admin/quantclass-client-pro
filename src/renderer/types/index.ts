@@ -16,7 +16,7 @@ export interface BaseStrategy {
 	name: string
 	offset_list: (string | number)[]
 	factors?: Record<string, string[]>
-	select_num: number | string
+	select_num: number | string | (number | null)[]
 	cap_weight: number
 	info?: string
 	update_time?: string

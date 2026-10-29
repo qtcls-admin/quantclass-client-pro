@@ -18,16 +18,11 @@ const HoldPeriodSchema = z.string().min(1, {
 	message: "请选择持仓周期",
 })
 
-const SelectNumSchema = z
-	.number()
-	.positive({
-		message: "选股数量必须大于0",
-	})
-	.or(
-		z.string().regex(/^\d+$/, {
-			message: "选股数量必须是大于 0 的数字",
-		}),
-	)
+const SelectNumSchema = z.union([
+	z.number(),
+	z.string(),
+	z.array(z.union([z.number(), z.null()])),
+])
 
 const RebalanceTimeSchema = z.string().optional()
 

@@ -145,7 +145,7 @@ const genSelectStgInfo = (
 	return {
 		...rest,
 		...("select_num" in rest && rest.select_num != null
-			? { select_num: Number.parseInt(String(rest.select_num)) }
+			? { select_num: rest.select_num }
 			: {}),
 		...(includeInfo ? { info: info ?? {} } : {}),
 	}

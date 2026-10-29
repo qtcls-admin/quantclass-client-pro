@@ -36,8 +36,9 @@ export const strategySchema = {
 			},
 		},
 		select_num: {
-			type: ["number", "string"],
-			description: "选股数量，整数表示具体数量，小数表示百分比",
+			type: ["number", "string", "array"],
+			description:
+				"选股数量或排名区间：整数为前 N 名，小数为前 N%（如 0.1），[5,10] 为区间；None 表示不限制该侧",
 		},
 		cap_weight: {
 			type: "number",

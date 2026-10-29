@@ -28,6 +28,7 @@ import {
 	getSelectRealMarketStrategyName,
 	resolveSelectStrategyName,
 } from "@/shared/lib/real-market-strategy-name"
+import { formatSelectNum } from "@/renderer/utils/formatSelect"
 
 import { useFusionManager } from "@/renderer/hooks/useFusionManager"
 import { useStrategyManager } from "@/renderer/hooks/useStrategyManager"
@@ -246,7 +247,7 @@ export const useGenLibraryColumn = (
 				if (val === -1) {
 					return <Badge variant="secondary">手工</Badge>
 				}
-				return <span>{val}</span>
+				return <span>{formatSelectNum(val)}</span>
 			},
 		},
 		{

@@ -68,13 +68,6 @@ export default function StrategyEditDialog({
 	}
 
 	const handleSave = async (values: any) => {
-		// -- 处理选股数量，确保是有效数字
-		const selectNum = Number(values.select_num)
-		if (Number.isNaN(selectNum) || selectNum <= 0) {
-			toast.error("选股数量必须是大于 0 的数字")
-			return
-		}
-
 		if (!checkRemarkNameUnique(values.remark_name)) return
 
 		const updatedStg = {
@@ -155,6 +148,7 @@ export default function StrategyEditDialog({
 								filter_list_post: strategy.filter_list_post || [],
 								factor_list: strategy.factor_list,
 								select_num: strategy.select_num,
+								select_inclusive: strategy.select_inclusive ?? "both",
 								rebalance_time: strategy.rebalance_time ?? "close-open",
 								timing: strategy.timing,
 								override: strategy.override,

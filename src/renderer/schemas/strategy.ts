@@ -20,27 +20,6 @@ export const HoldPeriodSchema = z.string().min(1, {
 	message: "请选择持仓周期",
 })
 
-export const SelectNumSchema = z
-	.number()
-	.positive({
-		message: "选股数量必须大于0",
-	})
-	.or(
-		z.string().regex(/^\d+$/, {
-			message: "选股数量必须是大于 0 的数字",
-		}),
-	)
-
-export const SelectNumFormSchema = z.union([z.number(), z.string()]).refine(
-	(val) => {
-		const num = typeof val === "string" ? Number(val) : val
-		return !Number.isNaN(num) && num > 0
-	},
-	{
-		message: "选股数量必须是大于 0 的数字",
-	},
-)
-
 export const OffsetListSchema = z.array(z.number()).default([0])
 
 export const OffsetListFormSchema = z.string().min(1, {
@@ -122,6 +101,7 @@ export const SelectStgSchema = BasicSelectStgSchema.extend({
 	remark_name: z.string().optional().default(""),
 	cap_weight: z.number().default(0),
 	offset_list: OffsetListSchema,
+	select_inclusive: z.enum(["right", "both", "left"]).optional(),
 	cross_sections: z.array(z.any()).optional(), // 截面因子
 	stock_timing_list: z.array(z.any()).optional(), // 个股择时
 	stock_timing: z.record(z.string(), z.any()).optional(), // 个股择时策略
@@ -133,7 +113,6 @@ export const SelectStgSchema = BasicSelectStgSchema.extend({
 
 export const SelectStgFormSchema = SelectStgSchema.omit({ name: true })
 	.extend({
-		select_num: SelectNumFormSchema,
 		offset_list: OffsetListFormSchema,
 	})
 	.passthrough() // 允许额外的字段
