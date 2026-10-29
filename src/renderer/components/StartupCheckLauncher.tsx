@@ -13,11 +13,10 @@ import {
 	type StartupCheckStep,
 } from "@/renderer/components/StartupCheckDialog"
 import type { StartupCheckFinishedStep } from "@/renderer/components/StartupCheckDialog"
-import { qmtConnectOkAtom } from "@/renderer/store/rocket-visible"
 import { realMarketConfigSchemaAtom } from "@/renderer/store/storage"
 import { startupCheckManualTriggerAtom } from "@/renderer/store/startup-check"
 import { userAtom } from "@/renderer/store/user"
-import { useAtomValue, useSetAtom } from "jotai"
+import { useAtomValue } from "jotai"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 const {
@@ -27,7 +26,6 @@ const {
 	checkDataConsistencyAlign,
 	getStartupCheckScheduleConfig,
 	reportStartupCheckResult,
-	setStoreValue,
 } = window.electronAPI
 
 export interface DataConsistencyCheckResult {
@@ -94,7 +92,6 @@ export async function runDataConsistencyCheck(): Promise<DataConsistencyCheckRes
 
 export function StartupCheckLauncher() {
 	const manualTrigger = useAtomValue(startupCheckManualTriggerAtom)
-	const setQmtConnectOk = useSetAtom(qmtConnectOkAtom)
 	const qmtMode = useAtomValue(realMarketConfigSchemaAtom).qmt_mode
 	const isPlanA = qmtMode === "planA"
 	const { isLoggedIn, user } = useAtomValue(userAtom)
@@ -156,8 +153,6 @@ export function StartupCheckLauncher() {
 							title: "QMT 连通性",
 							run: async () => {
 								const res = await checkStartupQmtConnect()
-								setQmtConnectOk(res.ok)
-								await setStoreValue("qmt_connect_ok", res.ok)
 								return {
 									ok: res.ok,
 									detail: res.detail ?? res.message,
@@ -172,7 +167,7 @@ export function StartupCheckLauncher() {
 				run: runDataConsistencyCheck,
 			},
 		],
-		[isLoggedIn, user, setQmtConnectOk, isPlanA],
+		[isLoggedIn, user, isPlanA],
 	)
 
 	return (
