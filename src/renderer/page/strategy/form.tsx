@@ -261,9 +261,15 @@ export function SelectStgForm({
 											{...field}
 											value={field.value?.toString()}
 											min={1}
-											label="选股数量"
+											label={
+												<>
+													<span className="mr-1">选股数量</span>
+													<span className="text-xs">（不支持直接编辑）</span>
+												</>
+											}
 											isRequired
 											variant="bordered"
+											readOnly
 											errorMessage={formState.errors.select_num?.message}
 										/>
 									</FormControl>
